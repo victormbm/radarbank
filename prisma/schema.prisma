@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bank {
+  id        String      @id @default(cuid())
+  name      String
+  slug      String      @unique
+  type      String
+  country   String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  metricValues MetricValue[]
+  scores    BankScore[]
+
+  @@map("banks")
+}
+
+model Metric {
+  id     String   @id @default(cuid())
+  key    String   @unique
+  label  String
+  unit   String
+  values MetricValue[]
+
+  @@map("metrics")
+}
+
+model MetricValue {
+  id       String   @id @default(cuid())
+  bankId   String
+  metricId String
+  date     DateTime
+  value    Float
+  bank     Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  metric   Metric   @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@index([bankId])
+  @@index([metricId])
+  @@index([date])
+  @@map("metric_values")
+}
+
+model BankScore {
+  id            String   @id @default(cuid())
+  bankId        String
+  date          DateTime
+  totalScore    Float
+  breakdownJson String
+  bank          Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
+
+  @@index([bankId])
+  @@index([date])
+  @@map("bank_scores")
+}
