@@ -1,188 +1,63 @@
-"use client";
-
-import { type ReactNode, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { mockBanks, mockBankDetails } from "@/lib/mock-data";
-import { BankStatusBadge } from "@/components/bank-status-badge";
-import { Building2, ShieldCheck, TriangleAlert, WalletCards } from "lucide-react";
 
 const BASEL_MIN = 11;
 
-const brazilTopBanks = [
-  "Itaú Unibanco",
-  "Bradesco",
-  "Banco do Brasil",
-  "Caixa Econômica Federal",
-  "Santander Brasil",
-  "Nubank",
-  "Inter",
-  "C6 Bank",
-  "BTG Pactual",
-  "Safra",
-];
-
 export default function DashboardPage() {
-  const [selectedBankNames, setSelectedBankNames] = useState<string[]>([
-    "Itaú Unibanco",
-    "Banco do Brasil",
-    "Nubank",
-    "Inter",
-    "Bradesco",
-  ]);
+  const criticalBanks = mockBanks.filter((bank) => bank.score < 50).length;
+  const warningBanks = mockBanks.filter(
+    (bank) => bank.score >= 50 && bank.score < 70
+  ).length;
 
-  const banksInFocus = useMemo(() => {
-    if (selectedBankNames.length === 0) {
-      return mockBanks;
-    }
+  const baselMetrics = Object.values(mockBankDetails)
+    .flatMap((detail) => detail.metrics)
+    .filter((metric) => metric.metric.key === "basel_ratio");
 
-    return mockBanks.filter((bank) => selectedBankNames.includes(bank.name));
-  }, [selectedBankNames]);
+  const baselBelowMin = baselMetrics.filter(
+    (metric) => metric.value < BASEL_MIN
+  ).length;
 
-  const dashboardMetrics = useMemo(() => {
-    const averageScore =
-      banksInFocus.reduce((acc, bank) => acc + bank.score, 0) /
-      (banksInFocus.length || 1);
-
-    const criticalBanks = banksInFocus.filter((bank) => bank.score < 50).length;
-    const warningBanks = banksInFocus.filter(
-      (bank) => bank.score >= 50 && bank.score < 70
-    ).length;
-
-    const banksIdsInFocus = new Set(banksInFocus.map((bank) => bank.id));
-
-    const baselBelowMinimum = Object.entries(mockBankDetails)
-      .filter(([id]) => banksIdsInFocus.has(id))
-      .flatMap(([, details]) => details.metrics)
-      .filter((metric) => metric.metric.key === "basel_ratio")
-      .filter((metric) => metric.value < BASEL_MIN).length;
-
-    return {
-      averageScore,
-      criticalBanks,
-      warningBanks,
-      baselBelowMinimum,
-    };
-  }, [banksInFocus]);
-
-  const toggleBankSelection = (bankName: string) => {
-    setSelectedBankNames((current) => {
-      if (current.includes(bankName)) {
-        return current.filter((name) => name !== bankName);
-      }
-
-      return [...current, bankName];
-    });
-  };
+  const averageScore =
+    mockBanks.reduce((acc, bank) => acc + bank.score, 0) / mockBanks.length;
 
   return (
-    <div className="flex w-full justify-center px-4 py-6 sm:px-6 lg:px-10">
-      <div className="w-full max-w-7xl space-y-6">
-      <section className="rounded-3xl border border-purple-100 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 p-6 text-white shadow-xl">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Radar Bank • Dashboard Executivo</h1>
-            <p className="mt-2 max-w-2xl text-sm text-purple-100">
-              Interface moderna para antecipar risco bancário com foco em capital (Basileia), liquidez,
-              rentabilidade e sinais preventivos.
-            </p>
-          </div>
-          <Badge className="bg-white/20 text-white hover:bg-white/20">Front-end preparado para plugar backend</Badge>
-        </div>
-      </section>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          Dashboard de Saúde Bancária
+        </h1>
+        <p className="text-slate-600 mt-2">
+          Visão executiva para antecipar risco sistêmico com foco em Basileia,
+          liquidez, ROE e inadimplência.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl"><Building2 className="h-5 w-5" />Bancos em foco (Brasil)</CardTitle>
-          <CardDescription>
-            Selecione os principais bancos atendendo o Brasil para personalizar seu radar.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {brazilTopBanks.map((bankName) => {
-            const isSelected = selectedBankNames.includes(bankName);
-
-            return (
-              <Button
-                key={bankName}
-                variant={isSelected ? "default" : "outline"}
-                className={isSelected ? "gradient-primary" : ""}
-                onClick={() => toggleBankSelection(bankName)}
-              >
-                {bankName}
-              </Button>
-            );
-          })}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Score médio" value={dashboardMetrics.averageScore.toFixed(1)} icon={<ShieldCheck className="h-4 w-4" />} />
-        <MetricCard label="Bancos críticos" value={String(dashboardMetrics.criticalBanks)} icon={<TriangleAlert className="h-4 w-4" />} />
-        <MetricCard label="Bancos em alerta" value={String(dashboardMetrics.warningBanks)} icon={<TriangleAlert className="h-4 w-4" />} />
-        <MetricCard label="Basileia < 11%" value={String(dashboardMetrics.baselBelowMinimum)} icon={<WalletCards className="h-4 w-4" />} />
+      <div className="grid gap-4 md:grid-cols-4">
+        <MetricCard label="Score médio" value={averageScore.toFixed(1)} />
+        <MetricCard label="Bancos críticos" value={String(criticalBanks)} />
+        <MetricCard label="Bancos em alerta" value={String(warningBanks)} />
+        <MetricCard label="Basileia < 11%" value={String(baselBelowMin)} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Saúde dos bancos selecionados</CardTitle>
-          <CardDescription>
-            Visão simplificada para operação diária. Clique nos bancos acima para ajustar o escopo.
-          </CardDescription>
+          <CardTitle>Próximos passos de arquitetura</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {banksInFocus.map((bank) => (
-            <div key={bank.id} className="rounded-2xl border bg-white p-4 shadow-sm transition hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold">{bank.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {bank.type === "digital" ? "Digital" : "Tradicional"} • {bank.country}
-                  </p>
-                </div>
-                <BankStatusBadge score={bank.score} />
-              </div>
-              <div className="mt-4">
-                <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
-                  <span>Score de saúde</span>
-                  <span>{bank.score.toFixed(1)}</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
-                    style={{ width: `${Math.min(100, bank.score)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-          {banksInFocus.length === 0 && (
-            <p className="text-sm text-slate-500">Nenhum banco selecionado. Escolha ao menos um banco para começar.</p>
-          )}
+        <CardContent className="space-y-3 text-sm text-slate-700">
+          <p>1. Separar coleta de dados, motor de score e motor de alertas.</p>
+          <p>2. Criar trilha de auditoria para cada alerta gerado.</p>
+          <p>3. Introduzir limiares por perfil de banco (digital/tradicional).</p>
         </CardContent>
       </Card>
-      </div>
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: ReactNode;
-}) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card className="border-purple-100">
+    <Card>
       <CardHeader className="pb-2">
-        <CardDescription className="flex items-center gap-2 text-slate-600">
-          {icon}
-          {label}
-        </CardDescription>
+        <CardDescription>{label}</CardDescription>
         <CardTitle className="text-3xl">{value}</CardTitle>
       </CardHeader>
     </Card>
