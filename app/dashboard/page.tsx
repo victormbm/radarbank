@@ -23,7 +23,7 @@ export default function DashboardPage() {
               <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
-              Radar Bank
+              Saúde dos Bancos em tempo Real.
             </h1>
           </div>
           <p className="text-slate-600 text-base sm:text-lg ml-0 sm:ml-14 mt-2">

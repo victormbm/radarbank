@@ -81,7 +81,7 @@ export function login(email: string, password: string): Omit<User, "password"> |
   }
 
   const isDemoLogin =
-    normalizedEmail === "demo@radarbank.com" && password === "demo123";
+    normalizedEmail === "demo@bancosegurobr.com" && password === "demo123";
 
   if (isDemoLogin) {
     const demoUser = {

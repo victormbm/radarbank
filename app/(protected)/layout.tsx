@@ -1,26 +1,18 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
-import { isAuthenticated } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-db";
 
-export default function ProtectedLayout({
+export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
+  // Verificar autenticação no servidor
+  const user = await getCurrentUser();
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push("/login");
-    }
-  }, [router, pathname]);
-
-  if (!isAuthenticated()) {
-    return null;
+  // Se não autenticado, redirecionar para login
+  if (!user) {
+    redirect("/login");
   }
 
   return (

@@ -1,0 +1,19 @@
+{
+  "buildCommand": "prisma generate && next build",
+  "devCommand": "next dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["gru1"],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "NEXT_PUBLIC_APP_URL": "@next_public_app_url",
+    "CRON_SECRET": "@cron_secret"
+  },
+  "crons": [
+    {
+      "path": "/api/ingest/cron",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

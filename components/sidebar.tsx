@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Bell, Filter, LogOut, TrendingUp, Activity, Sparkles, LayoutDashboard } from "lucide-react";
-import { logout, getCurrentUser } from "@/lib/auth";
 import { useEffect, useState } from "react";
 
 const navigation = [
@@ -17,15 +16,34 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; email: string; avatar?: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; avatar?: string | null } | null>(null);
 
   useEffect(() => {
-    setUser(getCurrentUser());
+    // Buscar dados do usuário da API
+    async function loadUser() {
+      try {
+        const response = await fetch('/api/auth/session');
+        const data = await response.json();
+        
+        if (data.authenticated && data.user) {
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+      }
+    }
+    
+    loadUser();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   return (
@@ -36,7 +54,7 @@ export function Sidebar() {
             <Activity className="h-6 w-6 text-white" />
           </div>
           <div>
-            <span className="text-xl font-bold text-gradient">Radar Bank</span>
+            <span className="text-xl font-bold text-gradient">Banco Seguro BR</span>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Sparkles className="h-3 w-3" />
               <span>Pro</span>

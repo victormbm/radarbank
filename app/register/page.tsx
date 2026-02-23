@@ -7,30 +7,48 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { register } from "@/lib/auth";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const onSubmit = (event: React.FormEvent) => {
+  const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
     setMessage("");
+    setIsError(false);
 
-    const response = register({ name, email, password });
-    setMessage(response.message);
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    setTimeout(() => {
-      if (response.ok) {
-        router.push("/login");
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage("Conta criada com sucesso! Redirecionando...");
+        setIsError(false);
+        setTimeout(() => {
+          router.push("/dashboard");
+          router.refresh();
+        }, 1000);
+      } else {
+        setMessage(data.error || "Erro ao criar conta");
+        setIsError(true);
       }
+    } catch (err) {
+      setMessage("Erro ao conectar com o servidor");
+      setIsError(true);
+    } finally {
       setIsLoading(false);
-    }, 400);
+    }
   };
 
   return (
@@ -53,7 +71,11 @@ export default function RegisterPage() {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           </div>
 
-          {message && <p className="text-sm text-purple-700">{message}</p>}
+          {message && (
+            <p className={`text-sm ${isError ? 'text-red-600' : 'text-green-600'}`}>
+              {message}
+            </p>
+          )}
 
           <Button disabled={isLoading} type="submit" className="w-full gradient-primary">
             {isLoading ? "Criando..." : "Cadastrar"}

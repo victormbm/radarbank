@@ -1,0 +1,256 @@
+/**
+ * Sistema de Scoring Melhorado - Banco Seguro BR
+ * 
+ * Calcula score de saúde bancária baseado em múltiplas métricas
+ */
+
+import { METRICS_CONFIG } from "./metrics-config";
+
+export interface BankSnapshotData {
+  basilRatio?: number | null;
+  tier1Ratio?: number | null;
+  cet1Ratio?: number | null;
+  leverageRatio?: number | null;
+  lcr?: number | null;
+  nsfr?: number | null;
+  quickLiquidity?: number | null;
+  loanToDeposit?: number | null;
+  roe?: number | null;
+  roa?: number | null;
+  nim?: number | null;
+  costToIncome?: number | null;
+  nplRatio?: number | null;
+  coverageRatio?: number | null;
+  writeOffRate?: number | null;
+  creditQuality?: number | null;
+  totalAssets?: number | null;
+  equity?: number | null;
+  totalDeposits?: number | null;
+  loanPortfolio?: number | null;
+  assetGrowth?: number | null;
+  loanGrowth?: number | null;
+  depositGrowth?: number | null;
+}
+
+export const SCORE_WEIGHTS = {
+  capital: 0.35,        // 35% - Basileia, Tier1, CET1, Leverage
+  liquidity: 0.25,      // 25% - LCR, NSFR, Quick Liquidity
+  profitability: 0.20,  // 20% - ROE, ROA, NIM, Cost/Income
+  credit: 0.20,         // 20% - NPL, Coverage, Write-off
+} as const;
+
+export interface ScoreBreakdown {
+  capital: number;
+  liquidity: number;
+  profitability: number;
+  credit: number;
+}
+
+export interface DetailedScore {
+  totalScore: number;
+  breakdown: ScoreBreakdown;
+  status: 'healthy' | 'warning' | 'critical';
+  alerts: string[];
+  metricScores: Record<string, number>;
+}
+
+/**
+ * Normaliza uma métrica para uma escala de 0-100
+ */
+function normalizeMetric(key: string, value: number): number {
+  const config = METRICS_CONFIG[key];
+  if (!config) return 50;
+
+  // Para métricas onde menor é melhor (ex: NPL, Cost/Income)
+  const isReversed = ['npl_ratio', 'cost_to_income', 'write_off_rate'].includes(key);
+
+  if (isReversed) {
+    // Quanto maior o valor, pior o score
+    if (value <= config.ideal) {
+      return 100;
+    } else if (value >= config.max) {
+      return 0;
+    } else {
+      const normalized = 100 - ((value - config.ideal) / (config.max - config.ideal)) * 100;
+      return Math.max(0, Math.min(100, normalized));
+    }
+  } else {
+    // Quanto maior o valor, melhor o score
+    if (value >= config.ideal) {
+      return 100;
+    } else if (value <= config.min) {
+      return 0;
+    } else {
+      const normalized = ((value - config.min) / (config.ideal - config.min)) * 100;
+      return Math.max(0, Math.min(100, normalized));
+    }
+  }
+}
+
+/**
+ * Calcula score detalhado com base nas métricas
+ */
+export function computeDetailedScore(snapshot: BankSnapshotData): DetailedScore {
+  const metricScores: Record<string, number> = {};
+  const alerts: string[] = [];
+
+  // Mapear snapshot para métricas
+  const metricsData: Record<string, number | null | undefined> = {
+    basel_ratio: snapshot.basilRatio,
+    tier1_ratio: snapshot.tier1Ratio,
+    cet1_ratio: snapshot.cet1Ratio,
+    leverage_ratio: snapshot.leverageRatio,
+    lcr: snapshot.lcr,
+    nsfr: snapshot.nsfr,
+    quick_liquidity: snapshot.quickLiquidity,
+    loan_to_deposit: snapshot.loanToDeposit,
+    roe: snapshot.roe,
+    roa: snapshot.roa,
+    nim: snapshot.nim,
+    cost_to_income: snapshot.costToIncome,
+    npl_ratio: snapshot.nplRatio,
+    coverage_ratio: snapshot.coverageRatio,
+    write_off_rate: snapshot.writeOffRate,
+    credit_quality: snapshot.creditQuality,
+  };
+
+  // Calcular scores individuais e detectar alertas
+  for (const metricKey of Object.keys(metricsData)) {
+    const value = metricsData[metricKey];
+    const config = METRICS_CONFIG[metricKey];
+    
+    if (value !== null && value !== undefined && config) {
+      const score = normalizeMetric(metricKey, value);
+      metricScores[metricKey] = score;
+
+      // Verificar se está em nível crítico
+      if (config.weight > 0) { // Apenas métricas com peso
+        const isCritical = 
+          (['npl_ratio', 'cost_to_income', 'write_off_rate'].includes(metricKey) && value > config.critical) ||
+          (!['npl_ratio', 'cost_to_income', 'write_off_rate'].includes(metricKey) && value < config.critical);
+
+        if (isCritical) {
+          alerts.push(`${config.label}: ${value}${config.unit} (crítico: ${config.critical}${config.unit})`);
+        }
+      }
+    }
+  }
+
+  // Calcular scores por categoria
+  const capitalMetrics = ['basel_ratio', 'tier1_ratio', 'cet1_ratio', 'leverage_ratio'];
+  const liquidityMetrics = ['lcr', 'nsfr', 'quick_liquidity', 'loan_to_deposit'];
+  const profitabilityMetrics = ['roe', 'roa', 'nim', 'cost_to_income'];
+  const creditMetrics = ['npl_ratio', 'coverage_ratio', 'write_off_rate', 'credit_quality'];
+
+  const capitalScore = calculateCategoryScore(capitalMetrics, metricScores, metricsData);
+  const liquidityScore = calculateCategoryScore(liquidityMetrics, metricScores, metricsData);
+  const profitabilityScore = calculateCategoryScore(profitabilityMetrics, metricScores, metricsData);
+  const creditScore = calculateCategoryScore(creditMetrics, metricScores, metricsData);
+
+  const breakdown: ScoreBreakdown = {
+    capital: capitalScore,
+    liquidity: liquidityScore,
+    profitability: profitabilityScore,
+    credit: creditScore,
+  };
+
+  // Calcular score total ponderado
+  const totalScore =
+    capitalScore * SCORE_WEIGHTS.capital +
+    liquidityScore * SCORE_WEIGHTS.liquidity +
+    profitabilityScore * SCORE_WEIGHTS.profitability +
+    creditScore * SCORE_WEIGHTS.credit;
+
+  const status = getStatusFromScore(totalScore);
+
+  return {
+    totalScore: Math.round(totalScore * 100) / 100,
+    breakdown,
+    status,
+    alerts,
+    metricScores,
+  };
+}
+
+/**
+ * Calcula score de uma categoria
+ */
+function calculateCategoryScore(
+  metricKeys: string[], 
+  metricScores: Record<string, number>,
+  metricsData: Record<string, number | null | undefined>
+): number {
+  let totalWeight = 0;
+  let weightedSum = 0;
+
+  for (const key of metricKeys) {
+    const config = METRICS_CONFIG[key];
+    const value = metricsData[key];
+    
+    if (value !== null && value !== undefined && config && config.weight > 0) {
+      const score = metricScores[key] || 0;
+      weightedSum += score * config.weight;
+      totalWeight += config.weight;
+    }
+  }
+
+  if (totalWeight === 0) return 0;
+  
+  // Normalizar para escala 0-100 da categoria
+  return (weightedSum / totalWeight);
+}
+
+/**
+ * Determina status baseado no score
+ */
+export function getStatusFromScore(
+  score: number
+): "healthy" | "warning" | "critical" {
+  if (score >= 70) return "healthy";
+  if (score >= 50) return "warning";
+  return "critical";
+}
+
+/**
+ * Calcula score simplificado (compatibilidade com versão antiga)
+ */
+export interface MetricData {
+  key: string;
+  value: number;
+}
+
+export function computeScore(metrics: MetricData[]): {
+  totalScore: number;
+  breakdown: ScoreBreakdown;
+} {
+  const metricMap = new Map(metrics.map((m) => [m.key, m.value]));
+
+  const capitalScore = normalizeMetric(
+    "basel_ratio",
+    metricMap.get("basel_ratio") ?? 0
+  );
+  const liquidityScore = normalizeMetric(
+    "quick_liquidity",
+    metricMap.get("quick_liquidity") ?? 0
+  );
+  const profitabilityScore = normalizeMetric("roe", metricMap.get("roe") ?? 0);
+  const creditScore = normalizeMetric("npl_ratio", metricMap.get("npl_ratio") ?? 0);
+
+  const breakdown: ScoreBreakdown = {
+    capital: capitalScore,
+    liquidity: liquidityScore,
+    profitability: profitabilityScore,
+    credit: creditScore,
+  };
+
+  const totalScore =
+    capitalScore * SCORE_WEIGHTS.capital +
+    liquidityScore * SCORE_WEIGHTS.liquidity +
+    profitabilityScore * SCORE_WEIGHTS.profitability +
+    creditScore * SCORE_WEIGHTS.credit;
+
+  return {
+    totalScore: Math.round(totalScore * 100) / 100,
+    breakdown,
+  };
+}

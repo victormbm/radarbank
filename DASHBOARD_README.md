@@ -1,4 +1,4 @@
-# Radar Bank - Dashboard de Saúde Bancária
+# Banco Seguro BR - Dashboard de Saúde Bancária
 
 Sistema moderno de monitoramento de saúde financeira dos principais bancos brasileiros.
 

@@ -1,15 +1,15 @@
-# 🏦 Radar Bank - Monitor de Saúde Bancária
+# 🏦 Banco Seguro BR - Monitor de Saúde Bancária
 
 <div align="center">
 
-![Radar Bank](https://img.shields.io/badge/Radar_Bank-Monitor_Bancário-8B5CF6?style=for-the-badge)
+![Banco Seguro BR](https://img.shields.io/badge/Banco_Seguro_BR-Monitor_Bancário-8B5CF6?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)
 
 **Monitoramento em tempo real da saúde dos bancos com alertas inteligentes** 🚀
 
-[Demo](#) · [Documentação](#instalação) · [Reportar Bug](https://github.com/victormbm/radarbank/issues)
+[Demo](#) · [Documentação](#instalação) · [Reportar Bug](https://github.com/victormbm/bancosegurobr/issues)
 
 </div>
 
@@ -17,7 +17,7 @@
 
 ## 📋 Sobre o Projeto
 
-O **Radar Bank** é uma plataforma SaaS moderna para monitoramento da saúde financeira de instituições bancárias brasileiras. Através de métricas financeiras e algoritmos de scoring, oferece insights em tempo real para melhores decisões.
+O **Banco Seguro BR** é uma plataforma SaaS moderna para monitoramento da saúde financeira de instituições bancárias brasileiras. Através de métricas financeiras e algoritmos de scoring, oferece insights em tempo real para melhores decisões.
 
 ### ✨ Principais Funcionalidades
 
@@ -75,8 +75,8 @@ O score de saúde é calculado com base em:
 
 1️⃣ **Clone o repositório**
 ```bash
-git clone https://github.com/victormbm/radarbank.git
-cd radarbank
+git clone https://github.com/victormbm/bancosegurobr.git
+cd bancosegurobr
 ```
 
 2️⃣ **Instale as dependências**
@@ -88,7 +88,7 @@ npm install
 
 Crie um arquivo `.env` na raiz:
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/radar_bank?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/banco_seguro?schema=public"
 ```
 
 4️⃣ **Execute as migrações**
@@ -109,7 +109,7 @@ Acesse: **http://localhost:3000** 🎉
 ## 📁 Estrutura do Projeto
 
 ```
-radar-bank/
+banco-seguro/
 ├── app/
 │   ├── (protected)/          # Rotas autenticadas
 │   │   ├── alerts/          # Dashboard de alertas

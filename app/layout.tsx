@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Radar Bank - Monitor de Saúde Bancária",
+  title: "Banco Seguro BR - Monitor de Saúde Bancária",
   description: "Monitoramento em tempo real da saúde dos bancos com alertas inteligentes",
 };
 
