@@ -240,12 +240,12 @@ async function processQuarterData(
 
       // 4. Calcular e salvar score
       const scoreData = computeDetailedScore({
-        basileia: snapshot.basilRatio,
-        tier1: snapshot.tier1Ratio,
-        cet1: snapshot.cet1Ratio,
+        basilRatio: snapshot.basilRatio,
+        tier1Ratio: snapshot.tier1Ratio,
+        cet1Ratio: snapshot.cet1Ratio,
         leverageRatio: snapshot.leverageRatio,
         equity: snapshot.equity,
-        assets: snapshot.totalAssets,
+        totalAssets: snapshot.totalAssets,
         totalDeposits: snapshot.totalDeposits,
         loanPortfolio: snapshot.loanPortfolio,
         roe: snapshot.roe,
@@ -259,17 +259,19 @@ async function processQuarterData(
         coverageRatio: snapshot.coverageRatio,
       });
 
-      const score = await prisma.bankScore.create({
+      await prisma.bankScore.create({
         data: {
           bankId: bank.id,
-          snapshotId: snapshot.id,
           date: new Date(dataBase),
           totalScore: scoreData.totalScore,
-          capitalScore: scoreData.capitalScore,
-          liquidityScore: scoreData.liquidityScore,
-          profitabilityScore: scoreData.profitabilityScore,
-          creditScore: scoreData.creditScore,
           status: scoreData.status,
+          capitalScore: scoreData.breakdown.capital,
+          liquidityScore: scoreData.breakdown.liquidity,
+          profitabilityScore: scoreData.breakdown.profitability,
+          creditScore: scoreData.breakdown.credit,
+          reputationScore: scoreData.breakdown.reputation,
+          sentimentScore: scoreData.breakdown.sentiment,
+          marketScore: scoreData.breakdown.market,
         }
       });
 

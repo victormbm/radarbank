@@ -48,7 +48,7 @@ export async function getLastUpdateMetadata(): Promise<UpdateMetadata | null> {
   try {
     // Buscar o snapshot mais recente
     const latestSnapshot = await prisma.bankSnapshot.findFirst({
-      orderBy: { referenceDate: 'desc' },
+      orderBy: { date: 'desc' },
       include: { bank: true },
     });
 
@@ -56,17 +56,17 @@ export async function getLastUpdateMetadata(): Promise<UpdateMetadata | null> {
 
     // Contar quantos bancos foram atualizados nessa data
     const banksUpdated = await prisma.bankSnapshot.count({
-      where: { referenceDate: latestSnapshot.referenceDate },
+      where: { date: latestSnapshot.date },
     });
 
     // Contar scores dessa mesma data
     const scoresComputed = await prisma.bankScore.count({
-      where: { referenceDate: latestSnapshot.referenceDate },
+      where: { date: latestSnapshot.date },
     });
 
     return {
-      lastUpdateDate: latestSnapshot.updatedAt,
-      dataReferenceDate: latestSnapshot.referenceDate,
+      lastUpdateDate: latestSnapshot.date,
+      dataReferenceDate: latestSnapshot.date.toISOString(),
       banksUpdated,
       scoresComputed,
       significantChanges: [],
@@ -87,14 +87,17 @@ export async function detectSignificantChanges(
   const changes: SignificantChange[] = [];
 
   try {
+    const date1 = new Date(referenceDate1);
+    const date2 = new Date(referenceDate2);
+
     // Buscar scores dos dois períodos
     const scores1 = await prisma.bankScore.findMany({
-      where: { referenceDate: referenceDate1 },
+      where: { date: date1 },
       include: { bank: true },
     });
 
     const scores2 = await prisma.bankScore.findMany({
-      where: { referenceDate: referenceDate2 },
+      where: { date: date2 },
       include: { bank: true },
     });
 
@@ -104,8 +107,8 @@ export async function detectSignificantChanges(
       if (!score2) continue;
 
       // Mudança no score geral
-      const scoreDiff = score2.overallScore - score1.overallScore;
-      const scoreChangePercent = (scoreDiff / score1.overallScore) * 100;
+      const scoreDiff = score2.totalScore - score1.totalScore;
+      const scoreChangePercent = (scoreDiff / score1.totalScore) * 100;
 
       if (Math.abs(scoreChangePercent) >= 5) {
         // Mudança >= 5%
@@ -113,8 +116,8 @@ export async function detectSignificantChanges(
           bankId: score1.bankId,
           bankName: score1.bank.name,
           metric: 'score',
-          oldValue: score1.overallScore,
-          newValue: score2.overallScore,
+          oldValue: score1.totalScore,
+          newValue: score2.totalScore,
           changePercent: scoreChangePercent,
           severity: getSeverity(Math.abs(scoreChangePercent)),
         });
@@ -123,12 +126,12 @@ export async function detectSignificantChanges(
 
     // Buscar snapshots para comparar métricas específicas
     const snapshots1 = await prisma.bankSnapshot.findMany({
-      where: { referenceDate: referenceDate1 },
+      where: { date: date1 },
       include: { bank: true },
     });
 
     const snapshots2 = await prisma.bankSnapshot.findMany({
-      where: { referenceDate: referenceDate2 },
+      where: { date: date2 },
       include: { bank: true },
     });
 
@@ -137,15 +140,15 @@ export async function detectSignificantChanges(
       if (!snap2) continue;
 
       // Basileia
-      if (snap1.basileia && snap2.basileia) {
-        const diff = ((snap2.basileia - snap1.basileia) / snap1.basileia) * 100;
+      if (snap1.basilRatio && snap2.basilRatio) {
+        const diff = ((snap2.basilRatio - snap1.basilRatio) / snap1.basilRatio) * 100;
         if (Math.abs(diff) >= 10) {
           changes.push({
             bankId: snap1.bankId,
             bankName: snap1.bank.name,
             metric: 'basileia',
-            oldValue: snap1.basileia,
-            newValue: snap2.basileia,
+            oldValue: snap1.basilRatio,
+            newValue: snap2.basilRatio,
             changePercent: diff,
             severity: getSeverity(Math.abs(diff)),
           });
@@ -153,15 +156,15 @@ export async function detectSignificantChanges(
       }
 
       // NPL - aumentos são críticos
-      if (snap1.npl && snap2.npl) {
-        const diff = ((snap2.npl - snap1.npl) / snap1.npl) * 100;
+      if (snap1.nplRatio && snap2.nplRatio) {
+        const diff = ((snap2.nplRatio - snap1.nplRatio) / snap1.nplRatio) * 100;
         if (Math.abs(diff) >= 15) {
           changes.push({
             bankId: snap1.bankId,
             bankName: snap1.bank.name,
             metric: 'npl',
-            oldValue: snap1.npl,
-            newValue: snap2.npl,
+            oldValue: snap1.nplRatio,
+            newValue: snap2.nplRatio,
             changePercent: diff,
             severity: diff > 0 ? 'critical' : 'medium', // Aumento é pior
           });

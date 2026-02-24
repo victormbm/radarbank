@@ -30,13 +30,39 @@ export interface BankSnapshotData {
   assetGrowth?: number | null;
   loanGrowth?: number | null;
   depositGrowth?: number | null;
+  
+  // Dados de Reputação (Reclame Aqui)
+  reputationScore?: number | null;      // 0-10
+  resolvedRate?: number | null;         // 0-100%
+  averageRating?: number | null;        // 0-5
+  sentimentScore?: number | null;       // -1 a +1
+  totalComplaints?: number | null;
+  
+  // Dados de Mercado
+  stockPrice?: number | null;
+  stockChange?: number | null;          // %
+  marketCap?: number | null;
 }
 
+/**
+ * Pesos do Score - Nova Fórmula
+ * 
+ * 60% Dados Técnicos BCB (dividido entre 4 categorias)
+ * 25% Reputação (Reclame Aqui)
+ * 10% Sentiment (Análise de sentimento)
+ * 5% Mercado (Ações, etc)
+ */
 export const SCORE_WEIGHTS = {
-  capital: 0.35,        // 35% - Basileia, Tier1, CET1, Leverage
-  liquidity: 0.25,      // 25% - LCR, NSFR, Quick Liquidity
-  profitability: 0.20,  // 20% - ROE, ROA, NIM, Cost/Income
-  credit: 0.20,         // 20% - NPL, Coverage, Write-off
+  // Dados Técnicos BCB (60% total)
+  capital: 0.21,        // 21% - Basileia, Tier1, CET1, Leverage
+  liquidity: 0.15,      // 15% - LCR, NSFR, Quick Liquidity
+  profitability: 0.12,  // 12% - ROE, ROA, NIM, Cost/Income
+  credit: 0.12,         // 12% - NPL, Coverage, Write-off
+  
+  // Novos Componentes (40% total)
+  reputation: 0.25,     // 25% - Reclame Aqui (experiência do consumidor)
+  sentiment: 0.10,      // 10% - Análise de sentimento
+  market: 0.05,         // 5% - Dados de mercado (ações)
 } as const;
 
 export interface ScoreBreakdown {
@@ -44,6 +70,9 @@ export interface ScoreBreakdown {
   liquidity: number;
   profitability: number;
   credit: number;
+  reputation: number;
+  sentiment: number;
+  market: number;
 }
 
 export interface DetailedScore {
@@ -85,6 +114,101 @@ function normalizeMetric(key: string, value: number): number {
       return Math.max(0, Math.min(100, normalized));
     }
   }
+}
+
+/**
+ * Calcula score de reputação (Reclame Aqui)
+ * 
+ * Considera:
+ * - Reputation Score (0-10) - peso 40%
+ * - Resolved Rate (0-100%) - peso 30%
+ * - Average Rating (0-5) - peso 20%
+ * - Volume de reclamações (penalidade) - peso 10%
+ */
+function calculateReputationScore(snapshot: BankSnapshotData): number {
+  if (!snapshot.reputationScore && !snapshot.resolvedRate && !snapshot.averageRating) {
+    return 50; // Score neutro se não há dados
+  }
+
+  let score = 0;
+  let weights = 0;
+
+  // Reputation Score (0-10 → 0-100)
+  if (snapshot.reputationScore !== null && snapshot.reputationScore !== undefined) {
+    score += (snapshot.reputationScore / 10) * 100 * 0.40;
+    weights += 0.40;
+  }
+
+  // Resolved Rate (0-100% → 0-100)
+  if (snapshot.resolvedRate !== null && snapshot.resolvedRate !== undefined) {
+    score += snapshot.resolvedRate * 0.30;
+    weights += 0.30;
+  }
+
+  // Average Rating (0-5 → 0-100)
+  if (snapshot.averageRating !== null && snapshot.averageRating !== undefined) {
+    score += (snapshot.averageRating / 5) * 100 * 0.20;
+    weights += 0.20;
+  }
+
+  // Volume de reclamações (penalidade)
+  if (snapshot.totalComplaints !== null && snapshot.totalComplaints !== undefined) {
+    // Normalizar: até 10k = 100, acima de 100k = 0
+    const complaintsScore = Math.max(0, 100 - (snapshot.totalComplaints / 1000));
+    score += complaintsScore * 0.10;
+    weights += 0.10;
+  }
+
+  return weights > 0 ? score / weights : 50;
+}
+
+/**
+ * Calcula score de sentiment
+ * 
+ * Converte sentiment score (-1 a +1) para escala 0-100
+ */
+function calculateSentimentScore(snapshot: BankSnapshotData): number {
+  if (snapshot.sentimentScore === null || snapshot.sentimentScore === undefined) {
+    return 50; // Neutro
+  }
+
+  // -1 = 0, 0 = 50, +1 = 100
+  return ((snapshot.sentimentScore + 1) / 2) * 100;
+}
+
+/**
+ * Calcula score de mercado (ações, etc)
+ * 
+ * Considera variação do preço das ações e market cap
+ */
+function calculateMarketScore(snapshot: BankSnapshotData): number {
+  if (!snapshot.stockChange && !snapshot.marketCap) {
+    return 50; // Neutro se não há dados
+  }
+
+  let score = 0;
+  let weights = 0;
+
+  // Stock Change (%) - últimos 30 dias
+  // -20% = 0, 0% = 50, +20% = 100
+  if (snapshot.stockChange !== null && snapshot.stockChange !== undefined) {
+    const normalizedChange = Math.max(-20, Math.min(20, snapshot.stockChange));
+    const changeScore = ((normalizedChange + 20) / 40) * 100;
+    score += changeScore * 0.70;
+    weights += 0.70;
+  }
+
+  // Market Cap (indicador relativo de tamanho/estabilidade)
+  if (snapshot.marketCap !== null && snapshot.marketCap !== undefined) {
+    // Cap acima de 10B = 100, abaixo de 1B = 50
+    const capScore = snapshot.marketCap > 10_000_000_000 ? 100 : 
+                     snapshot.marketCap > 5_000_000_000 ? 80 :
+                     snapshot.marketCap > 1_000_000_000 ? 60 : 50;
+    score += capScore * 0.30;
+    weights += 0.30;
+  }
+
+  return weights > 0 ? score / weights : 50;
 }
 
 /**
@@ -147,19 +271,42 @@ export function computeDetailedScore(snapshot: BankSnapshotData): DetailedScore 
   const profitabilityScore = calculateCategoryScore(profitabilityMetrics, metricScores, metricsData);
   const creditScore = calculateCategoryScore(creditMetrics, metricScores, metricsData);
 
+  // Calcular novos scores
+  const reputationScore = calculateReputationScore(snapshot);
+  const sentimentScore = calculateSentimentScore(snapshot);
+  const marketScore = calculateMarketScore(snapshot);
+
+  // Adicionar alertas de reputação
+  if (snapshot.reputationScore !== null && snapshot.reputationScore !== undefined) {
+    if (snapshot.reputationScore < 6.0) {
+      alerts.push(`Reputação baixa: ${snapshot.reputationScore.toFixed(1)}/10 no Reclame Aqui`);
+    }
+  }
+  if (snapshot.resolvedRate !== null && snapshot.resolvedRate !== undefined) {
+    if (snapshot.resolvedRate < 70) {
+      alerts.push(`Taxa de resolução baixa: ${snapshot.resolvedRate.toFixed(1)}%`);
+    }
+  }
+
   const breakdown: ScoreBreakdown = {
     capital: capitalScore,
     liquidity: liquidityScore,
     profitability: profitabilityScore,
     credit: creditScore,
+    reputation: reputationScore,
+    sentiment: sentimentScore,
+    market: marketScore,
   };
 
-  // Calcular score total ponderado
+  // Calcular score total ponderado (nova fórmula)
   const totalScore =
     capitalScore * SCORE_WEIGHTS.capital +
     liquidityScore * SCORE_WEIGHTS.liquidity +
     profitabilityScore * SCORE_WEIGHTS.profitability +
-    creditScore * SCORE_WEIGHTS.credit;
+    creditScore * SCORE_WEIGHTS.credit +
+    reputationScore * SCORE_WEIGHTS.reputation +
+    sentimentScore * SCORE_WEIGHTS.sentiment +
+    marketScore * SCORE_WEIGHTS.market;
 
   const status = getStatusFromScore(totalScore);
 
@@ -236,18 +383,29 @@ export function computeScore(metrics: MetricData[]): {
   const profitabilityScore = normalizeMetric("roe", metricMap.get("roe") ?? 0);
   const creditScore = normalizeMetric("npl_ratio", metricMap.get("npl_ratio") ?? 0);
 
+  // Scores neutros para novos componentes (50 = neutro)
+  const reputationScore = 50;
+  const sentimentScore = 50;
+  const marketScore = 50;
+
   const breakdown: ScoreBreakdown = {
     capital: capitalScore,
     liquidity: liquidityScore,
     profitability: profitabilityScore,
     credit: creditScore,
+    reputation: reputationScore,
+    sentiment: sentimentScore,
+    market: marketScore,
   };
 
   const totalScore =
     capitalScore * SCORE_WEIGHTS.capital +
     liquidityScore * SCORE_WEIGHTS.liquidity +
     profitabilityScore * SCORE_WEIGHTS.profitability +
-    creditScore * SCORE_WEIGHTS.credit;
+    creditScore * SCORE_WEIGHTS.credit +
+    reputationScore * SCORE_WEIGHTS.reputation +
+    sentimentScore * SCORE_WEIGHTS.sentiment +
+    marketScore * SCORE_WEIGHTS.market;
 
   return {
     totalScore: Math.round(totalScore * 100) / 100,

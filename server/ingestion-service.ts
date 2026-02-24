@@ -24,22 +24,22 @@ export async function seedSampleData() {
 
   if (!baselMetric) {
     baselMetric = await prisma.metric.create({
-      data: { key: "basel_ratio", label: "Basel Capital Ratio", unit: "%" },
+      data: { key: "basel_ratio", label: "Basel Capital Ratio", unit: "%", category: "capital" },
     });
   }
   if (!roeMetric) {
     roeMetric = await prisma.metric.create({
-      data: { key: "roe", label: "Return on Equity", unit: "%" },
+      data: { key: "roe", label: "Return on Equity", unit: "%", category: "profitability" },
     });
   }
   if (!liquidityMetric) {
     liquidityMetric = await prisma.metric.create({
-      data: { key: "quick_liquidity", label: "Quick Liquidity Ratio", unit: "%" },
+      data: { key: "quick_liquidity", label: "Quick Liquidity Ratio", unit: "%", category: "liquidity" },
     });
   }
   if (!nplMetric) {
     nplMetric = await prisma.metric.create({
-      data: { key: "npl_ratio", label: "Non-Performing Loans Ratio", unit: "%" },
+      data: { key: "npl_ratio", label: "Non-Performing Loans Ratio", unit: "%", category: "credit" },
     });
   }
 

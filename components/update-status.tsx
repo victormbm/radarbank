@@ -17,6 +17,8 @@ interface UpdateStatus {
     dataReferenceDate: string;
     referenceQuarter: string;
     daysSinceUpdate: number;
+    banksUpdated?: number;
+    scoresComputed?: number;
   };
   nextExpectedUpdate?: {
     estimatedDate: string;

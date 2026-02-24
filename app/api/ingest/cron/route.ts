@@ -11,7 +11,7 @@
 
 import { NextResponse } from 'next/server';
 import { ingestBCBData } from '@/server/bcb-data-service';
-import { computeScoresForAllBanks } from '@/server/scoring-service';
+import { recomputeAllScores } from '@/server/scoring-service';
 import {
   checkForNewData,
   saveUpdateMetadata,
@@ -76,13 +76,8 @@ export async function GET(request: Request) {
 
     // PASSO 4: Recomputar scores
     console.log('🧮 [CRON] Recomputando scores...');
-    const scoringResult = await computeScoresForAllBanks();
-
-    if (!scoringResult.success) {
-      console.warn('⚠️  [CRON] Falha ao recomputar scores:', scoringResult.error);
-    } else {
-      console.log(`✅ [CRON] ${scoringResult.scoresComputed} scores computados`);
-    }
+    const scores = await recomputeAllScores();
+    console.log(`✅ [CRON] ${scores.length} scores computados`);
 
     // PASSO 5: Detectar mudanças significativas
     let significantChanges: any[] = [];
@@ -110,7 +105,7 @@ export async function GET(request: Request) {
       lastUpdateDate: new Date(),
       dataReferenceDate: ingestionResult.latestReferenceDate || 'unknown',
       banksUpdated: ingestionResult.banksProcessed || 0,
-      scoresComputed: scoringResult.scoresComputed || 0,
+      scoresComputed: scores.length,
       significantChanges,
     };
 
@@ -134,7 +129,7 @@ export async function GET(request: Request) {
         newReferenceDate: ingestionResult.latestReferenceDate,
         banksProcessed: ingestionResult.banksProcessed,
         snapshotsCreated: ingestionResult.snapshotsCreated,
-        scoresComputed: scoringResult.scoresComputed,
+        scoresComputed: scores.length,
         significantChanges: {
           count: significantChanges.length,
           critical: significantChanges.filter((c) => c.severity === 'critical').length,

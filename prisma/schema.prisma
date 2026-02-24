@@ -20,6 +20,7 @@ model Bank {
   metricValues MetricValue[]
   scores    BankScore[]
   snapshots BankSnapshot[]
+  reputation BankReputation[]
 
   @@map("banks")
 }
@@ -54,18 +55,28 @@ model MetricValue {
 model BankScore {
   id                 String   @id @default(cuid())
   bankId             String
-  date               DateTime
-  status             String   // healthy, warning, critical
-  totalScore         Float
+  date               DateTime // Data de referência dos dados
+  totalScore         Float    // Score geral composto
+  status             String   // Status do banco (healthy, warning, critical)
+  
+  // Scores por dimensão (BCB - peso 60% na nova fórmula)
   capitalScore       Float
   liquidityScore     Float
   profitabilityScore Float
   creditScore        Float
+  
+  // Novos scores (40% na nova fórmula)
+  reputationScore    Float?   // 25% - Dados do Reclame Aqui
+  sentimentScore     Float?   // 10% - Análise de sentimento
+  marketScore        Float?   // 5% - Dados de mercado/ações
+  
+  createdAt          DateTime @default(now())
+  
   bank               Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
+  @@unique([bankId, date])
   @@index([bankId])
   @@index([date])
-  @@index([status])
   @@map("bank_scores")
 }
 
@@ -144,4 +155,38 @@ model User {
 
   @@map("users")
   @@index([email])
+}
+
+model BankReputation {
+  id                String   @id @default(cuid())
+  bankId            String
+  source            String   // reclameaqui, trustpilot, google, etc
+  referenceDate     DateTime @default(now())
+  
+  // Métricas Reclame Aqui
+  reputationScore   Float?   // 0-10
+  resolvedRate      Float?   // % de reclamações resolvidas
+  averageRating     Float?   // Nota média dos consumidores
+  totalComplaints   Int?     // Total de reclamações
+  responseTime      Float?   // Tempo médio de resposta (horas)
+  
+  // Categorias de reclamação (top 5)
+  topComplaint1     String?
+  topComplaint2     String?
+  topComplaint3     String?
+  
+  // Análise de sentimento
+  sentimentScore    Float?   // -1 a +1 (negativo a positivo)
+  
+  // Metadados
+  rawData           String?  @db.Text // JSON com dados brutos
+  lastScraped       DateTime @default(now())
+  
+  bank              Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  
+  @@unique([bankId, source, referenceDate])
+  @@index([bankId])
+  @@index([source])
+  @@index([referenceDate])
+  @@map("bank_reputation")
 }

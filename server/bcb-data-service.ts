@@ -295,15 +295,15 @@ export async function ingestBCBData(): Promise<{
     // Buscar data de referência mais recente após ingestão
     const { prisma } = await import('@/lib/db');
     const latestSnapshot = await prisma.bankSnapshot.findFirst({
-      orderBy: { referenceDate: 'desc' },
-      select: { referenceDate: true },
+      orderBy: { date: 'desc' },
+      select: { date: true },
     });
     
     return {
       success: result.success,
       banksProcessed: result.banksProcessed,
       snapshotsCreated: result.banksProcessed, // Assumindo 1 snapshot por banco
-      latestReferenceDate: latestSnapshot?.referenceDate || null,
+      latestReferenceDate: latestSnapshot?.date.toISOString() || null,
     };
   } catch (error: any) {
     console.error('[ingestBCBData] Erro:', error);

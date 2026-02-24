@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BankSelector } from "@/components/bank-selector";
 import { BankMetrics } from "@/components/bank-metrics";
 import { BanksOverview } from "@/components/banks-overview";
-import { BrazilianBank } from "@/lib/brazilian-banks";
+import { BrazilianBank, BRAZILIAN_BANKS } from "@/lib/brazilian-banks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
@@ -29,8 +29,54 @@ export default function DashboardPage() {
           <p className="text-slate-600 text-base sm:text-lg ml-0 sm:ml-14 mt-2">
             Monitor de Saúde Bancária - Análise em tempo real dos principais bancos do Brasil
           </p>
+          <div className="ml-0 sm:ml-14 mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-full">
+            <span className="text-emerald-700 text-sm sm:text-base font-semibold">🏆 EXCLUSIVO:</span>
+            <span className="text-slate-700 text-sm sm:text-base">Únicos a combinar métricas BCB + Reputação Reclame Aqui</span>
+          </div>
         </div>
       </div>
+
+      {/* Differentiator Banner */}
+      <Card className="border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/80 via-teal-50/50 to-cyan-50/80 shadow-lg hover:shadow-xl transition-all">
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="flex-shrink-0">
+              <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
+                <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">
+                🎯 Nossa Vantagem Competitiva Única
+              </h3>
+              <p className="text-slate-700 text-base sm:text-lg leading-relaxed mb-3">
+                Somos os <strong className="text-emerald-700">únicos no Brasil</strong> a combinar:
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-emerald-600 text-lg">✓</span>
+                  <div>
+                    <p className="font-semibold text-slate-900">Dados Técnicos BCB</p>
+                    <p className="text-sm text-slate-600">Basileia, ROE, NPL, Liquidez</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-emerald-600 text-lg">✓</span>
+                  <div>
+                    <p className="font-semibold text-slate-900">Reputação Real</p>
+                    <p className="text-sm text-slate-600">45K+ avaliações do Reclame Aqui</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-emerald-700 font-medium mt-4 bg-emerald-100/50 px-3 py-2 rounded-lg inline-block">
+                💡 Saiba se seu banco é sólido E se você será bem atendido!
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Info Cards */}
       <div className="grid gap-4 sm:gap-5 md:grid-cols-3 lg:gap-6">
@@ -38,12 +84,13 @@ export default function DashboardPage() {
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-              <CardTitle className="text-sm sm:text-base">Métricas Monitoradas</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Análise Completa</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-600">
-              Basileia, Liquidez, ROE e Inadimplência em tempo real
+              <strong>60% BCB:</strong> Basileia, Liquidez, ROE, NPL<br />
+              <strong>40% Experiência:</strong> Reclame Aqui + Sentiment
             </p>
           </CardContent>
         </Card>
@@ -52,12 +99,12 @@ export default function DashboardPage() {
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-              <CardTitle className="text-sm sm:text-base">Sistema de Alertas</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Alertas Inteligentes</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-600">
-              Antecipação de risco sistêmico e alertas inteligentes
+              Notificações quando score técnico OU reputação caírem
             </p>
           </CardContent>
         </Card>
@@ -66,12 +113,12 @@ export default function DashboardPage() {
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <Info className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-              <CardTitle className="text-sm sm:text-base">14 Bancos Ativos</CardTitle>
+              <CardTitle className="text-sm sm:text-base">{BRAZILIAN_BANKS.length} Bancos</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-600">
-              Principais instituições financeiras do mercado brasileiro
+              Principais instituições com score técnico + reputação
             </p>
           </CardContent>
         </Card>

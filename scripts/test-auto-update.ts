@@ -5,7 +5,7 @@
  */
 
 import { ingestBCBData } from '../server/bcb-data-service';
-import { computeScoresForAllBanks } from '../server/scoring-service';
+import { recomputeAllScores } from '../server/scoring-service';
 import {
   checkForNewData,
   getLastUpdateMetadata,
@@ -36,9 +36,9 @@ async function testAutoUpdate() {
     const checkResult = await checkForNewData();
     
     console.log(`   ${checkResult.message}`);
-    console.log(`   Novos dados disponíveis: ${checkResult.hasNewDataAvailable ? 'SIM ✅' : 'NÃO ❌'}`);
+    console.log(`   Novos dados disponíveis: ${checkResult.hasNewData ? 'SIM ✅' : 'NÃO ❌'}`);
     
-    if (!checkResult.hasNewDataAvailable) {
+    if (!checkResult.hasNewData) {
       console.log('\n✅ Sistema está atualizado. Nada a fazer.\n');
       process.exit(0);
     }
@@ -62,15 +62,11 @@ async function testAutoUpdate() {
     // PASSO 4: Recomputar scores
     console.log('\n🧮 PASSO 4: Recomputando scores...\n');
     const scoringStart = Date.now();
-    const scoringResult = await computeScoresForAllBanks();
+    const scores = await recomputeAllScores();
     const scoringTime = Date.now() - scoringStart;
 
-    if (!scoringResult.success) {
-      console.warn(`⚠️  Falha parcial no scoring: ${scoringResult.error}`);
-    } else {
-      console.log(`✅ Scoring concluído em ${scoringTime}ms`);
-      console.log(`   Scores computados: ${scoringResult.scoresComputed}`);
-    }
+    console.log(`✅ Scoring concluído em ${scoringTime}ms`);
+    console.log(`   Scores computados: ${scores.length}`);
 
     // PASSO 5: Detectar mudanças
     if (currentStatus && ingestionResult.latestReferenceDate) {
@@ -113,7 +109,7 @@ async function testAutoUpdate() {
     console.log('✅ TESTE CONCLUÍDO COM SUCESSO\n');
     console.log('Resumo:');
     console.log(`   Bancos atualizados: ${ingestionResult.banksProcessed}`);
-    console.log(`   Scores computados: ${scoringResult.scoresComputed || 0}`);
+    console.log(`   Scores computados: ${scores.length}`);
     console.log(`   Tempo total: ${Date.now() - ingestionStart}ms`);
     console.log('='.repeat(60) + '\n');
 

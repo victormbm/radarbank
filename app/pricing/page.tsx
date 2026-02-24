@@ -32,6 +32,7 @@ export default function PricingPage() {
       popular: true,
       features: [
         "Monitore até 3 bancos",
+        "🏆 Score BCB + Reputação Reclame Aqui",
         "Alertas por EMAIL automáticos",
         "Histórico de 6 meses",
         "Notificação de quedas no score",
@@ -52,6 +53,8 @@ export default function PricingPage() {
       popular: false,
       features: [
         "Bancos ilimitados",
+        "🏆 Análise Dupla: BCB + Reclame Aqui",
+        "📊 Top 3 Categorias de Reclamações",
         "Alertas por WhatsApp",
         "Alertas por Email",
         "Histórico de 24 meses",
@@ -89,9 +92,9 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <Badge className="mb-4 bg-gradient-to-r from-purple-600 to-pink-600">
-            Planos para Você
+        <div className="text-center mb-12">
+          <Badge className="mb-4 bg-gradient-to-r from-emerald-600 to-teal-600">
+            🏆 Exclusivo no Brasil
           </Badge>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Proteja seu Dinheiro
@@ -107,6 +110,52 @@ export default function PricingPage() {
               ✅ 7 dias grátis do plano Gratuito
             </div>
           </div>
+        </div>
+
+        {/* Differentiator Section */}
+        <div className="max-w-4xl mx-auto mb-16">
+          <Card className="border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 shadow-2xl">
+            <CardContent className="p-8">
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-bold text-slate-900 mb-3">
+                  🎯 Por que Somos Diferentes?
+                </h2>
+                <p className="text-lg text-slate-700">
+                  Nenhum outro serviço no Brasil faz isso:
+                </p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-white/80 rounded-xl p-6 border border-emerald-200">
+                  <div className="text-4xl mb-3">🏛️</div>
+                  <h3 className="font-bold text-lg text-slate-900 mb-2">Dados Técnicos BCB</h3>
+                  <p className="text-slate-600 text-sm mb-3">
+                    Basileia, ROE, NPL, Liquidez - métricas prudenciais oficiais
+                  </p>
+                  <div className="text-xs text-emerald-700 font-semibold">60% do Score Final</div>
+                </div>
+                
+                <div className="bg-white/80 rounded-xl p-6 border border-teal-200">
+                  <div className="text-4xl mb-3">⭐</div>
+                  <h3 className="font-bold text-lg text-slate-900 mb-2">Reputação Real</h3>
+                  <p className="text-slate-600 text-sm mb-3">
+                    45.000+ avaliações do Reclame Aqui de clientes reais
+                  </p>
+                  <div className="text-xs text-teal-700 font-semibold">25% do Score Final</div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl p-6 text-center">
+                <p className="text-lg font-semibold mb-2">
+                  💡 O Que Isso Significa Para Você?
+                </p>
+                <p className="text-emerald-50">
+                  Você descobre se seu banco é <strong>tecnicamente sólido</strong> (BCB) <strong>E</strong> se você será <strong>bem atendido</strong> (Reclame Aqui).
+                  Bancos tradicionais só mostram marketing. BCB só mostra números. Nós mostramos a verdade completa.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
