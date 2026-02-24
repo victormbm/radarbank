@@ -108,8 +108,8 @@ export default function LoginPage() {
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 blur-md opacity-50 animate-pulse"></div>
               </div>
               <div>
-                <div className="text-xl xl:text-2xl font-bold">Banco Seguro BR</div>
-                <div className="text-xs text-purple-300">Monitor de Saúde Bancária</div>
+                <div className="text-xl xl:text-2xl font-bold">Banco Seguro BR: Monitor de Saúde Bancária</div>
+                <div className="text-xs text-purple-300">Não espere para descobrir se seu banco vai mal quando ele quebrar.</div>
               </div>
             </div>
             

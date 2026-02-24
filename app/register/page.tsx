@@ -60,7 +60,7 @@ export default function RegisterPage() {
       const result = await signIn(provider, {
         callbackUrl: '/dashboard',
         redirect: true,
-      }) as unknown as { error?: string };
+      }) as any;
 
       if (result?.error) {
         if (result.error === 'Configuration') {

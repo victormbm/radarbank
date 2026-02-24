@@ -12,6 +12,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Banco Seguro BR - Monitor de Saúde Bancária",
   description: "Monitoramento em tempo real da saúde dos bancos com alertas inteligentes",
+  icons: {
+    icon: '/assets/icons/iconFavicon2.png?v=2',
+    apple: '/assets/icons/iconFavicon2.png?v=2',
+  },
 };
 
 export default function RootLayout({
