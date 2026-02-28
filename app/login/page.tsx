@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Activity, ArrowRight, Shield, Lock, Eye, EyeOff, AlertTriangle, TrendingDown, HeartPulse, Stethoscope, AlertCircle, Sparkles, TrendingUp, BarChart3 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { Activity, ArrowRight, Shield, Lock, Eye, EyeOff, AlertTriangle, TrendingDown, Stethoscope, AlertCircle, Sparkles, TrendingUp, BarChart3, HeartPulse } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -103,10 +104,7 @@ export default function LoginPage() {
           {/* Logo and Title */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/50 relative">
-                <HeartPulse className="h-7 w-7" />
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 blur-md opacity-50 animate-pulse"></div>
-              </div>
+              <Logo size={56} showText={false} />
               <div>
                 <div className="text-xl xl:text-2xl font-bold">Banco Seguro BR: Monitor de Saúde Bancária</div>
                 <div className="text-xs text-purple-300">Não espere para descobrir se seu banco vai mal quando ele quebrar.</div>
@@ -217,15 +215,8 @@ export default function LoginPage() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6 sm:p-8 lg:p-12 relative z-10">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/50 relative">
-              <HeartPulse className="h-6 w-6 text-white" />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 blur-md opacity-50 animate-pulse"></div>
-            </div>
-            <div className="text-left">
-              <span className="text-xl font-bold text-white block">Banco Seguro BR</span>
-              <span className="text-xs text-purple-300">Monitor de Saúde Bancária</span>
-            </div>
+          <div className="lg:hidden flex items-center justify-center mb-6">
+            <Logo size={48} showText={true} />
           </div>
 
           {/* Mobile Competitive Advantage - Compact */}
@@ -291,9 +282,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/20"></div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-transparent px-3 text-slate-400 backdrop-blur-sm">ou cadastre-se com e-mail</span>
-                </div>
+             
               </div>
             </div>
 

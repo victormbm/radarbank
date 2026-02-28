@@ -48,11 +48,9 @@ export function Sidebar() {
 
   return (
     <div className="flex h-full w-72 flex-col border-r bg-gradient-to-b from-white via-purple-50/30 to-white">
-      <div className="flex h-20 items-center px-6 border-b bg-white/50 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl gradient-primary shadow-lg shadow-purple-500/30">
-            <Activity className="h-6 w-6 text-white" />
-          </div>
+      <div className="flex h-28 items-center px-6 border-b bg-white/50 backdrop-blur-sm">
+        <div className="flex items-center gap-4">
+          <img src="/assets/icons/iconFavicon4.png" alt="Banco Seguro BR" className="w-[100px] sm:w-[400px] h-auto" />
           <div>
             <span className="text-xl font-bold text-gradient">Banco Seguro BR</span>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">

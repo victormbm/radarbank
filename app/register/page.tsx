@@ -7,7 +7,8 @@ import { signIn } from "next-auth/react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { HeartPulse, ArrowRight, Shield, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, Sparkles } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -92,15 +93,8 @@ export default function RegisterPage() {
       <div className="flex items-center justify-center w-full p-6 sm:p-8 relative z-10">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/50 relative">
-              <HeartPulse className="h-7 w-7 text-white" />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-600 blur-md opacity-50 animate-pulse"></div>
-            </div>
-            <div className="text-left">
-              <span className="text-2xl font-bold text-white block">Banco Seguro BR</span>
-              <span className="text-xs text-purple-300">Monitor de Saúde Bancária</span>
-            </div>
+          <div className="flex items-center justify-center mb-8">
+            <Logo size={64} showText={true} />
           </div>
 
           {/* Main Card */}
@@ -124,7 +118,7 @@ export default function RegisterPage() {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                Continuar com Google
+                Continuar com Googless
               </Button>
               
               <Button
