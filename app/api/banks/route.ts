@@ -73,6 +73,9 @@ export async function GET() {
         liquidityScore: latestScore?.liquidityScore,
         profitabilityScore: latestScore?.profitabilityScore,
         creditScore: latestScore?.creditScore,
+        reputationScore: latestScore?.reputationScore,
+        sentimentScore: latestScore?.sentimentScore,
+        marketScore: latestScore?.marketScore,
         
         // Métricas principais
         basilRatio: latestSnapshot?.basilRatio,

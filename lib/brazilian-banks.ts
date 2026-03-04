@@ -1,3 +1,39 @@
+// Função utilitária para normalizar strings (remover acentos, caixa baixa, remover S.A. etc)
+function normalize(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .replace(/banco/g, '')
+    .replace(/s\.a\.?/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+// Busca visual do banco por slug ou nome normalizado
+export function getBankVisual(bank: { slug?: string; name?: string }): BrazilianBank | undefined {
+  if (!bank) return undefined;
+  // 1. Tenta por slug exato
+  if (bank.slug) {
+    const bySlug = BRAZILIAN_BANKS.find(b => b.slug === bank.slug);
+    if (bySlug) return bySlug;
+  }
+  // 2. Tenta por nome normalizado (ignora 'Banco', 'S.A.', acentos, espaços)
+  if (bank.name) {
+    const normName = normalize(bank.name);
+    // Busca por nome normalizado exato
+    let found = BRAZILIAN_BANKS.find(b => normalize(b.name) === normName);
+    if (found) return found;
+    // Busca por displayName ou shortName normalizados exatos
+    found = BRAZILIAN_BANKS.find(b => normalize(b.displayName) === normName || normalize(b.shortName) === normName);
+    if (found) return found;
+    // Busca por inclusão (nome do array está contido no nome do banco do banco de dados)
+    found = BRAZILIAN_BANKS.find(b => normName.includes(normalize(b.name)) || normName.includes(normalize(b.displayName)) || normName.includes(normalize(b.shortName)));
+    if (found) return found;
+    // Busca reversa: nome do banco do banco de dados está contido no nome do array
+    found = BRAZILIAN_BANKS.find(b => normalize(b.name).includes(normName) || normalize(b.displayName).includes(normName) || normalize(b.shortName).includes(normName));
+    if (found) return found;
+  }
+  return undefined;
+}
 export interface BrazilianBank {
   id: string;
   name: string;
@@ -12,6 +48,43 @@ export interface BrazilianBank {
   };
   icon: string; // Emoji or initial
   description: string;
+}
+
+export interface DashboardBank {
+  id: string;
+  name: string;
+  slug: string;
+  cnpj?: string | null;
+  type: 'digital' | 'traditional';
+  country: string;
+  segment?: string | null;
+
+  status?: 'healthy' | 'warning' | 'critical' | 'unknown';
+  score?: number | null;
+  scoreTrend?: number | null;
+
+  capitalScore?: number | null;
+  liquidityScore?: number | null;
+  profitabilityScore?: number | null;
+  creditScore?: number | null;
+  reputationScore?: number | null;
+  sentimentScore?: number | null;
+  marketScore?: number | null;
+
+  basilRatio?: number | null;
+  basileaTrend?: number | null;
+  roe?: number | null;
+  roeTrend?: number | null;
+  roa?: number | null;
+  quickLiquidity?: number | null;
+  nplRatio?: number | null;
+  nplTrend?: number | null;
+
+  totalAssets?: number | null;
+  equity?: number | null;
+
+  ranking?: number | null;
+  totalBanks?: number;
 }
 
 export const BRAZILIAN_BANKS: BrazilianBank[] = [

@@ -1,31 +1,43 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BRAZILIAN_BANKS } from "@/lib/brazilian-banks";
+import { DashboardBank, getBankVisual } from "@/lib/brazilian-banks";
 import { TrendingUp, Building2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Mock scores - será substituído pelo backend depois
-const mockScores: Record<string, number> = {
-  '1': 85.5, '2': 78.3, '3': 72.8, '4': 75.6, '5': 70.5, '6': 74.2,
-  '7': 68.2, '8': 81.4, '9': 88.5, '10': 73.8, '11': 83.2, '12': 79.5,
-  '13': 72.2, '14': 69.5
-};
+interface BanksOverviewProps {
+  banks: DashboardBank[];
+  isLoading?: boolean;
+}
 
-export function BanksOverview() {
-  const totalBanks = BRAZILIAN_BANKS.length;
-  const digitalBanks = BRAZILIAN_BANKS.filter(b => b.type === 'digital').length;
-  const traditionalBanks = BRAZILIAN_BANKS.filter(b => b.type === 'traditional').length;
+export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) {
+  if (isLoading) {
+    return (
+      <Card className="bg-white/95 border-white/30 backdrop-blur-sm shadow-md">
+        <CardContent className="py-10 text-center text-slate-600">Carregando dados dos bancos...</CardContent>
+      </Card>
+    );
+  }
 
-  const scores = Object.values(mockScores);
-  const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const totalBanks = banks.length;
+  const digitalBanks = banks.filter(b => b.type === 'digital').length;
+  const traditionalBanks = banks.filter(b => b.type === 'traditional').length;
+
+  const scores = banks.map(b => b.score).filter((score): score is number => typeof score === 'number');
+  const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
   const excellentBanks = scores.filter(s => s >= 80).length;
   const goodBanks = scores.filter(s => s >= 70 && s < 80).length;
   const attentionBanks = scores.filter(s => s >= 60 && s < 70).length;
   const criticalBanks = scores.filter(s => s < 60).length;
 
-  const topBanks = BRAZILIAN_BANKS
-    .map(bank => ({ bank, score: mockScores[bank.id] || 0 }))
+  const trendValues = banks.map(b => b.scoreTrend).filter((trend): trend is number => typeof trend === 'number');
+  const avgTrend = trendValues.length > 0
+    ? trendValues.reduce((a, b) => a + b, 0) / trendValues.length
+    : null;
+
+  const topBanks = banks
+    .filter(bank => typeof bank.score === 'number')
+    .map(bank => ({ bank, score: bank.score as number }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
@@ -45,7 +57,7 @@ export function BanksOverview() {
           icon={TrendingUp}
           color="green"
           description="Média geral de saúde"
-          trend="+2.3"
+          trend={avgTrend !== null ? `${avgTrend >= 0 ? '+' : ''}${avgTrend.toFixed(1)}` : undefined}
         />
         <StatCard
           label="Excelentes"
@@ -63,7 +75,7 @@ export function BanksOverview() {
         />
       </div>
 
-      <Card className="shadow-md hover:shadow-lg transition-shadow">
+      <Card className="bg-white/95 border-white/30 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow">
         <CardHeader className="pb-4 sm:pb-6">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
             <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
@@ -80,31 +92,38 @@ export function BanksOverview() {
                 key={item.bank.id}
                 className="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 transition-colors"
               >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
-                  {index + 1}
-                </div>
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center text-xl",
-                  "bg-gradient-to-br",
-                  item.bank.color.gradient
-                )}>
-                  {item.bank.icon}
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm">{item.bank.displayName}</h4>
-                  <p className="text-xs text-slate-500">
-                    {item.bank.type === 'digital' ? 'Digital' : 'Tradicional'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-bold">{item.score.toFixed(1)}</div>
-                  <div className={cn(
-                    "text-xs font-medium",
-                    item.score >= 80 ? "text-green-600" : "text-blue-600"
-                  )}>
-                    {item.score >= 80 ? "Excelente" : "Bom"}
-                  </div>
-                </div>
+                {(() => {
+                  const visualBank = getBankVisual(item.bank);
+                  return (
+                    <>
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                        {index + 1}
+                      </div>
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center text-xl",
+                        "bg-gradient-to-br",
+                        visualBank?.color.gradient || "from-slate-600 to-slate-400"
+                      )}>
+                        {visualBank?.icon || "🏦"}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm">{item.bank.name}</h4>
+                        <p className="text-xs text-slate-500">
+                          {item.bank.type === 'digital' ? 'Digital' : 'Tradicional'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-bold">{item.score.toFixed(1)}</div>
+                        <div className={cn(
+                          "text-xs font-medium",
+                          item.score >= 80 ? "text-green-600" : "text-blue-600"
+                        )}>
+                          {item.score >= 80 ? "Excelente" : "Bom"}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -112,7 +131,7 @@ export function BanksOverview() {
       </Card>
 
       <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-        <Card className="shadow-md hover:shadow-lg transition-shadow">
+        <Card className="bg-white/95 border-white/30 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="pb-4 sm:pb-5">
             <CardTitle className="text-sm sm:text-base">Distribuição por Tipo</CardTitle>
           </CardHeader>
@@ -146,17 +165,17 @@ export function BanksOverview() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-md hover:shadow-lg transition-shadow">
+        <Card className="bg-white/95 border-white/30 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="pb-4 sm:pb-5">
             <CardTitle className="text-sm sm:text-base">Distribuição de Saúde</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 sm:space-y-4">
-              <HealthBar label="Excelente" count={excellentBanks} color="from-green-500 to-green-400" />
-              <HealthBar label="Bom" count={goodBanks} color="from-blue-500 to-blue-400" />
-              <HealthBar label="Atenção" count={attentionBanks} color="from-yellow-500 to-yellow-400" />
+              <HealthBar label="Excelente" count={excellentBanks} color="from-green-500 to-green-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label="Bom" count={goodBanks} color="from-blue-500 to-blue-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label="Atenção" count={attentionBanks} color="from-yellow-500 to-yellow-400" total={Math.max(totalBanks, 1)} />
               {criticalBanks > 0 && (
-                <HealthBar label="Crítico" count={criticalBanks} color="from-red-500 to-red-400" />
+                <HealthBar label="Crítico" count={criticalBanks} color="from-red-500 to-red-400" total={Math.max(totalBanks, 1)} />
               )}
             </div>
           </CardContent>
@@ -186,7 +205,7 @@ function StatCard({ label, value, icon: Icon, color, description, trend }: StatC
   const colors = colorClasses[color];
 
   return (
-    <Card className={cn("border-2", colors.border)}>
+    <Card className={cn("border-2 bg-white/95 border-white/30 backdrop-blur-sm", colors.border)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardDescription className="text-xs font-medium">{label}</CardDescription>
@@ -214,10 +233,10 @@ interface HealthBarProps {
   label: string;
   count: number;
   color: string;
+  total: number;
 }
 
-function HealthBar({ label, count, color }: HealthBarProps) {
-  const total = 14; // Total de bancos
+function HealthBar({ label, count, color, total }: HealthBarProps) {
   const percentage = (count / total) * 100;
 
   return (

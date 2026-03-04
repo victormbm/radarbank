@@ -1,19 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BankSelector } from "@/components/bank-selector";
 import { BankMetrics } from "@/components/bank-metrics";
 import { BanksOverview } from "@/components/banks-overview";
-import { BrazilianBank, BRAZILIAN_BANKS } from "@/lib/brazilian-banks";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardBank } from "@/lib/brazilian-banks";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
 export default function DashboardPage() {
-  const [selectedBank, setSelectedBank] = useState<BrazilianBank | null>(null);
+  const [banks, setBanks] = useState<DashboardBank[]>([]);
+  const [selectedBank, setSelectedBank] = useState<DashboardBank | null>(null);
+  const [isLoadingBanks, setIsLoadingBanks] = useState(true);
+
+  useEffect(() => {
+    const loadBanks = async () => {
+      try {
+        setIsLoadingBanks(true);
+        const response = await fetch('/api/banks', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Falha ao carregar bancos');
+        const data = await response.json();
+        const normalizedBanks = Array.isArray(data) ? data : [];
+        setBanks(normalizedBanks);
+      } catch (error) {
+        console.error('Erro ao carregar bancos:', error);
+        setBanks([]);
+      } finally {
+        setIsLoadingBanks(false);
+      }
+    };
+
+    loadBanks();
+  }, []);
 
   return (
-    <div className="w-full min-h-screen p-4 sm:p-6 md:p-8 lg:p-12">
-      <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10 lg:space-y-12">
+    <div className="relative w-full min-h-screen p-4 sm:p-6 md:p-8 lg:p-12 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] opacity-10" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 lg:space-y-12">
       {/* Header Section */}
       <div className="relative py-4">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-orange-600/10 rounded-2xl blur-3xl" />
@@ -26,18 +54,18 @@ export default function DashboardPage() {
               Saúde dos Bancos em tempo Real.
             </h1>
           </div>
-          <p className="text-slate-600 text-base sm:text-lg ml-0 sm:ml-14 mt-2">
+          <p className="text-slate-300 text-base sm:text-lg ml-0 sm:ml-14 mt-2">
             Monitor de Saúde Bancária - Análise em tempo real dos principais bancos do Brasil
           </p>
-          <div className="ml-0 sm:ml-14 mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-full">
-            <span className="text-emerald-700 text-sm sm:text-base font-semibold">🏆 EXCLUSIVO:</span>
-            <span className="text-slate-700 text-sm sm:text-base">Únicos a combinar métricas BCB + Reputação Reclame Aqui</span>
+          <div className="ml-0 sm:ml-14 mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-400/40 rounded-full">
+            <span className="text-emerald-300 text-sm sm:text-base font-semibold">🏆 EXCLUSIVO:</span>
+            <span className="text-slate-200 text-sm sm:text-base">Únicos a combinar métricas BCB + Reputação Reclame Aqui</span>
           </div>
         </div>
       </div>
 
       {/* Differentiator Banner */}
-      <Card className="border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/80 via-teal-50/50 to-cyan-50/80 shadow-lg hover:shadow-xl transition-all">
+      <Card className="border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-50/90 via-teal-50/80 to-cyan-50/90 shadow-lg backdrop-blur-sm hover:shadow-xl transition-all">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <div className="flex-shrink-0">
@@ -80,7 +108,7 @@ export default function DashboardPage() {
 
       {/* Info Cards */}
       <div className="grid gap-4 sm:gap-5 md:grid-cols-3 lg:gap-6">
-        <Card className="border-blue-200 bg-blue-50/50 hover:shadow-md transition-shadow">
+        <Card className="border-blue-200/80 bg-blue-50/95 backdrop-blur-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
@@ -88,14 +116,14 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               <strong>60% BCB:</strong> Basileia, Liquidez, ROE, NPL<br />
               <strong>40% Experiência:</strong> Reclame Aqui + Sentiment
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 bg-purple-50/50 hover:shadow-md transition-shadow">
+        <Card className="border-purple-200/80 bg-purple-50/95 backdrop-blur-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <AlertTriangle className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
@@ -103,21 +131,21 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Notificações quando score técnico OU reputação caírem
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 bg-orange-50/50 hover:shadow-md transition-shadow">
+        <Card className="border-orange-200/80 bg-orange-50/95 backdrop-blur-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3 sm:pb-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <Info className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
-              <CardTitle className="text-sm sm:text-base">{BRAZILIAN_BANKS.length} Bancos</CardTitle>
+              <CardTitle className="text-sm sm:text-base">{banks.length} Bancos</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Principais instituições com score técnico + reputação
             </p>
           </CardContent>
@@ -128,18 +156,18 @@ export default function DashboardPage() {
       <div className="space-y-5 sm:space-y-6">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-purple-600" />
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-slate-900">Visão Geral do Sistema</h2>
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Visão Geral do Sistema</h2>
         </div>
-        <BanksOverview />
+        <BanksOverview banks={banks} isLoading={isLoadingBanks} />
       </div>
 
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-200"></div>
+          <div className="w-full border-t border-white/30"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-gradient-to-br from-slate-50 via-purple-50/20 to-pink-50/20 text-slate-500">
+          <span className="px-4 bg-slate-900/90 text-slate-200">
             Análise Individual
           </span>
         </div>
@@ -147,6 +175,7 @@ export default function DashboardPage() {
 
       {/* Bank Selector */}
       <BankSelector 
+        banks={banks}
         onSelectBank={setSelectedBank} 
         selectedBank={selectedBank}
       />
@@ -157,7 +186,7 @@ export default function DashboardPage() {
           <BankMetrics bank={selectedBank} />
         </div>
       ) : (
-        <Card className="border-dashed border-2 border-slate-200 shadow-sm">
+        <Card className="border-dashed border-2 border-white/40 bg-white/95 shadow-md backdrop-blur-sm">
           <CardContent className="flex flex-col items-center justify-center py-16 sm:py-20 lg:py-24 px-4">
             <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center mb-4 sm:mb-6">
               <Sparkles className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-purple-600" />
@@ -165,7 +194,7 @@ export default function DashboardPage() {
             <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-slate-900 mb-2 sm:mb-3">
               Selecione um banco para começar
             </h3>
-            <p className="text-sm sm:text-base text-slate-500 text-center max-w-md lg:max-w-lg">
+            <p className="text-sm sm:text-base text-slate-600 text-center max-w-md lg:max-w-lg">
               Escolha um banco acima para visualizar suas métricas de saúde financeira,
               índices de Basileia, liquidez e muito mais.
             </p>
@@ -175,7 +204,7 @@ export default function DashboardPage() {
 
       {/* Architecture Note */}
       {selectedBank && (
-        <Card className="border-slate-200 bg-slate-50/50 shadow-sm">
+        <Card className="border-white/30 bg-white/90 shadow-md backdrop-blur-sm">
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
               <Info className="h-4 w-4 sm:h-5 sm:w-5" />
