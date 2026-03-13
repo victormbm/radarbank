@@ -1,13 +1,8 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Shield, Sparkles } from "lucide-react";
+export default function RegisterPage() {
+  redirect("/dashboard");
+}
 import { Logo } from "@/components/ui/logo";
 
 export default function RegisterPage() {

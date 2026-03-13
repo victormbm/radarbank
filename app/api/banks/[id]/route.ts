@@ -1,24 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+// Sempre buscar dados frescos do banco — sem cache em nenhuma camada
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    
-    // Buscar banco com scores e snapshots
-    const bank = await prisma.bank.findUnique({
-      where: { id },
+
+    // Support lookup by either database id or slug
+    let bank = await prisma.bank.findFirst({
+      where: {
+        OR: [
+          { id },
+          { slug: id },
+        ],
+      },
       include: {
         scores: {
-          orderBy: { date: 'desc' },
-          take: 10, // Últimos 10 trimestres
+          orderBy: { date: "desc" },
+          take: 10,
         },
         snapshots: {
-          orderBy: { date: 'desc' },
-          take: 10, // Últimos 10 trimestres
+          orderBy: { date: "desc" },
+          take: 10,
+        },
+        reputation: {
+          orderBy: { referenceDate: "desc" },
+          take: 1,
         },
       },
     });
@@ -27,30 +39,42 @@ export async function GET(
       return NextResponse.json({ error: "Bank not found" }, { status: 404 });
     }
 
-    const latestScore = bank.scores[0];
-    const latestSnapshot = bank.snapshots[0];
+    const latestScore = bank.scores[0] ?? null;
+    const latestSnapshot = bank.snapshots[0] ?? null;
+    const latestReputation = bank.reputation[0] ?? null;
 
-    // Formatar métricas históricas para gráficos
-    const metrics = bank.snapshots.map(snapshot => ({
-      date: snapshot.date.toISOString(),
-      basilRatio: snapshot.basilRatio,
-      roe: snapshot.roe,
-      roa: snapshot.roa,
-      nplRatio: snapshot.nplRatio,
-      quickLiquidity: snapshot.quickLiquidity,
-      totalAssets: snapshot.totalAssets,
-      equity: snapshot.equity,
+    // Historical snapshots for charts
+    const metrics = bank.snapshots.map((s) => ({
+      date: s.date.toISOString(),
+      basilRatio: s.basilRatio,
+      cet1Ratio: s.cet1Ratio,
+      tier1Ratio: s.tier1Ratio,
+      leverageRatio: s.leverageRatio,
+      lcr: s.lcr,
+      nsfr: s.nsfr,
+      quickLiquidity: s.quickLiquidity,
+      loanToDeposit: s.loanToDeposit,
+      roe: s.roe,
+      roa: s.roa,
+      nim: s.nim,
+      costToIncome: s.costToIncome,
+      nplRatio: s.nplRatio,
+      coverageRatio: s.coverageRatio,
+      writeOffRate: s.writeOffRate,
+      totalAssets: s.totalAssets,
+      equity: s.equity,
     }));
 
-    // Formatar histórico de scores
-    const scoreHistory = bank.scores.map(score => ({
-      date: score.date.toISOString(),
-      totalScore: score.totalScore,
-      capitalScore: score.capitalScore,
-      liquidityScore: score.liquidityScore,
-      profitabilityScore: score.profitabilityScore,
-      creditScore: score.creditScore,
-      status: score.status,
+    // Historical scores for charts
+    const scoreHistory = bank.scores.map((s) => ({
+      date: s.date.toISOString(),
+      totalScore: s.totalScore,
+      capitalScore: s.capitalScore,
+      liquidityScore: s.liquidityScore,
+      profitabilityScore: s.profitabilityScore,
+      creditScore: s.creditScore,
+      reputationScore: s.reputationScore,
+      status: s.status,
     }));
 
     return NextResponse.json({
@@ -65,21 +89,61 @@ export async function GET(
         createdAt: bank.createdAt,
         updatedAt: bank.updatedAt,
       },
-      score: latestScore ? Math.round(latestScore.totalScore) : null,
-      breakdown: latestScore ? {
-        capital: latestScore.capitalScore,
-        liquidity: latestScore.liquidityScore,
-        profitability: latestScore.profitabilityScore,
-        credit: latestScore.creditScore,
-        reputation: latestScore.reputationScore,
-        sentiment: latestScore.sentimentScore,
-        market: latestScore.marketScore,
-      } : null,
-      status: latestScore?.status || 'unknown',
-      snapshot: latestSnapshot,
+      snapshot: latestSnapshot
+        ? {
+            date: latestSnapshot.date.toISOString(),
+            // Capital
+            basilRatio: latestSnapshot.basilRatio,
+            cet1Ratio: latestSnapshot.cet1Ratio,
+            tier1Ratio: latestSnapshot.tier1Ratio,
+            leverageRatio: latestSnapshot.leverageRatio,
+            // Liquidity
+            lcr: latestSnapshot.lcr,
+            nsfr: latestSnapshot.nsfr,
+            quickLiquidity: latestSnapshot.quickLiquidity,
+            loanToDeposit: latestSnapshot.loanToDeposit,
+            // Profitability
+            roe: latestSnapshot.roe,
+            roa: latestSnapshot.roa,
+            nim: latestSnapshot.nim,
+            costToIncome: latestSnapshot.costToIncome,
+            // Credit quality
+            nplRatio: latestSnapshot.nplRatio,
+            coverageRatio: latestSnapshot.coverageRatio,
+            writeOffRate: latestSnapshot.writeOffRate,
+            // Size
+            totalAssets: latestSnapshot.totalAssets,
+            equity: latestSnapshot.equity,
+            totalDeposits: latestSnapshot.totalDeposits,
+            loanPortfolio: latestSnapshot.loanPortfolio,
+          }
+        : null,
+      scores: latestScore
+        ? {
+            totalScore: latestScore.totalScore,
+            capitalScore: latestScore.capitalScore,
+            liquidityScore: latestScore.liquidityScore,
+            profitabilityScore: latestScore.profitabilityScore,
+            creditScore: latestScore.creditScore,
+            reputationScore: latestScore.reputationScore,
+            sentimentScore: latestScore.sentimentScore,
+            marketScore: latestScore.marketScore,
+            status: latestScore.status,
+            date: latestScore.date.toISOString(),
+          }
+        : null,
+      reputation: latestReputation
+        ? {
+            reputationScore: latestReputation.reputationScore,
+            resolvedRate: latestReputation.resolvedRate,
+            averageRating: latestReputation.averageRating,
+            totalComplaints: latestReputation.totalComplaints,
+            responseTime: latestReputation.responseTime,
+            sentimentScore: latestReputation.sentimentScore,
+          }
+        : null,
       metrics,
       scoreHistory,
-      lastScoreDate: latestScore?.date,
     });
   } catch (error) {
     console.error("Error fetching bank details:", error);

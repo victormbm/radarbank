@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Bell, Filter, LogOut, TrendingUp, Activity, Sparkles, LayoutDashboard } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bell, Filter, TrendingUp, Sparkles, LayoutDashboard } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -15,36 +14,6 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [user, setUser] = useState<{ name: string; email: string; avatar?: string | null } | null>(null);
-
-  useEffect(() => {
-    // Buscar dados do usuário da API
-    async function loadUser() {
-      try {
-        const response = await fetch('/api/auth/session');
-        const data = await response.json();
-        
-        if (data.authenticated && data.user) {
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar usuário:', error);
-      }
-    }
-    
-    loadUser();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push("/login");
-      router.refresh();
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-    }
-  };
 
   return (
     <div className="flex h-full w-72 flex-col border-r bg-gradient-to-b from-white via-purple-50/30 to-white">
@@ -86,22 +55,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      {user && (
-        <div className="border-t bg-white/50 backdrop-blur-sm p-4">
-          <div className="mb-3 flex items-center gap-3 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 p-3">
-            <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`} alt={user.name} className="h-10 w-10 rounded-full ring-2 ring-purple-200" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">{user.name}</p>
-              <p className="text-xs text-slate-600 truncate">{user.email}</p>
-            </div>
-          </div>
-          <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:bg-red-50 hover:text-red-600">
-            <LogOut className="h-5 w-5" />
-            Sair
-          </button>
-        </div>
-      )}
     </div>
   );
 }

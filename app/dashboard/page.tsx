@@ -5,6 +5,7 @@ import { BankSelector } from "@/components/bank-selector";
 import { BankMetrics } from "@/components/bank-metrics";
 import { BanksOverview } from "@/components/banks-overview";
 import { DashboardBank } from "@/lib/brazilian-banks";
+import type { BankDetail } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
@@ -12,7 +13,10 @@ export default function DashboardPage() {
   const [banks, setBanks] = useState<DashboardBank[]>([]);
   const [selectedBank, setSelectedBank] = useState<DashboardBank | null>(null);
   const [isLoadingBanks, setIsLoadingBanks] = useState(true);
+  const [selectedBankDetail, setSelectedBankDetail] = useState<BankDetail | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
+  // Load bank list
   useEffect(() => {
     const loadBanks = async () => {
       try {
@@ -32,6 +36,32 @@ export default function DashboardPage() {
 
     loadBanks();
   }, []);
+
+  // Load individual bank detail when a bank is selected
+  useEffect(() => {
+    if (!selectedBank) {
+      setSelectedBankDetail(null);
+      return;
+    }
+
+    const loadBankDetail = async () => {
+      try {
+        setIsLoadingDetail(true);
+        setSelectedBankDetail(null);
+        const response = await fetch(`/api/banks/${selectedBank.slug}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Falha ao carregar detalhes do banco');
+        const data: BankDetail = await response.json();
+        setSelectedBankDetail(data);
+      } catch (error) {
+        console.error('Erro ao carregar detalhes do banco:', error);
+        setSelectedBankDetail(null);
+      } finally {
+        setIsLoadingDetail(false);
+      }
+    };
+
+    loadBankDetail();
+  }, [selectedBank]);
 
   return (
     <div className="relative w-full min-h-screen p-4 sm:p-6 md:p-8 lg:p-12 bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 overflow-hidden">
@@ -183,7 +213,7 @@ export default function DashboardPage() {
       {/* Bank Metrics - Only show when a bank is selected */}
       {selectedBank ? (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <BankMetrics bank={selectedBank} />
+          <BankMetrics bank={selectedBank} detail={selectedBankDetail} isLoadingDetail={isLoadingDetail} />
         </div>
       ) : (
         <Card className="border-dashed border-2 border-white/40 bg-white/95 shadow-md backdrop-blur-sm">
@@ -202,20 +232,22 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* Architecture Note */}
-      {selectedBank && (
+      {/* Data source note - shown when detail is loaded */}
+      {selectedBank && selectedBankDetail && (
         <Card className="border-white/30 bg-white/90 shadow-md backdrop-blur-sm">
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-xs sm:text-sm flex items-center gap-2">
               <Info className="h-4 w-4 sm:h-5 sm:w-5" />
-              Nota Técnica
+              Fonte dos Dados
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Os dados exibidos atualmente são simulados para fins de prototipação do frontend.
-              Na próxima fase, integraremos com APIs do Banco Central e fontes oficiais para
-              dados reais em tempo real.
+              Dados financeiros coletados e processados a partir das publicações oficiais do
+              Banco Central do Brasil (BCB / IF.data). Reputação via Reclame Aqui.
+              {selectedBankDetail.scores?.date && (
+                <> Referência: {new Date(selectedBankDetail.scores.date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}.</>
+              )}
             </p>
           </CardContent>
         </Card>

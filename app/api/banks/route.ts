@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+// Sempre buscar dados frescos do banco — sem cache em nenhuma camada
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Buscar bancos do banco de dados

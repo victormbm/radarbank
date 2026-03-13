@@ -1,9 +1,9 @@
 /**
- * app/api/auth/session/route.ts
- * 
- * API Route para verificar sessão atual
- * 
- * GET /api/auth/session
+ * app/api/session/route.ts
+ *
+ * API Route para verificar sessão atual no fluxo JWT custom.
+ *
+ * GET /api/session
  * Response: { authenticated: boolean, user?: {...} }
  */
 

@@ -1,0 +1,1140 @@
+============================================ 
+[11/03/2026 12:02:44,12] Iniciando coleta REAL do Reclame Aqui... 
+============================================ 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🔄 ATUALIZAÇÃO REAL - RECLAME AQUI (Scraping)             ║
+║                                                                      ║
+║  Este script coleta dados REAIS diretamente do site reclameaqui.com ║
+║  Executar 3x ao dia: 8h, 14h, 20h                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔄 Iniciando coleta REAL de dados do Reclame Aqui...
+📅 Data/Hora: 11/03/2026, 12:02:45
+
+📊 Encontrados 14 bancos para atualizar
+
+🌐 Inicializando navegador Puppeteer...
+✅ Navegador iniciado
+🏦 Processando: Nubank (nubank)...
+📊 Coletando dados de: nubank
+🔗 URL: https://www.reclameaqui.com.br/empresa/nu-pagamentos-sa-nubank/
+❌ Erro ao fazer scraping de nubank: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Nubank
+🏦 Processando: Itaú Unibanco (itau)...
+📊 Coletando dados de: itau
+🔗 URL: https://www.reclameaqui.com.br/empresa/itau-unibanco/
+❌ Erro ao fazer scraping de itau: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Itaú Unibanco
+🏦 Processando: Banco do Brasil (bb)...
+📊 Coletando dados de: bb
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-do-brasil/
+❌ Erro ao fazer scraping de bb: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Banco do Brasil
+🏦 Processando: Bradesco (bradesco)...
+📊 Coletando dados de: bradesco
+🔗 URL: https://www.reclameaqui.com.br/empresa/bradesco/
+❌ Erro ao fazer scraping de bradesco: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Bradesco
+🏦 Processando: Caixa Econômica Federal (caixa)...
+📊 Coletando dados de: caixa
+🔗 URL: https://www.reclameaqui.com.br/empresa/caixa-economica-federal/
+❌ Erro ao fazer scraping de caixa: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Caixa Econômica Federal
+🏦 Processando: Santander Brasil (santander)...
+📊 Coletando dados de: santander
+🔗 URL: https://www.reclameaqui.com.br/empresa/santander/
+❌ Erro ao fazer scraping de santander: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Santander Brasil
+🏦 Processando: Banco Inter (inter)...
+📊 Coletando dados de: inter
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-inter/
+❌ Erro ao fazer scraping de inter: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Banco Inter
+🏦 Processando: C6 Bank (c6)...
+📊 Coletando dados de: c6
+🔗 URL: https://www.reclameaqui.com.br/empresa/c6-bank/
+❌ Erro ao fazer scraping de c6: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para C6 Bank
+🏦 Processando: BTG Pactual (btg)...
+📊 Coletando dados de: btg
+🔗 URL: https://www.reclameaqui.com.br/empresa/btg-pactual/
+❌ Erro ao fazer scraping de btg: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para BTG Pactual
+🏦 Processando: PagBank (pagbank)...
+📊 Coletando dados de: pagbank
+🔗 URL: https://www.reclameaqui.com.br/empresa/pagbank/
+❌ Erro ao fazer scraping de pagbank: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para PagBank
+🏦 Processando: Banco Safra (safra)...
+📊 Coletando dados de: safra
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-safra/
+❌ Erro ao fazer scraping de safra: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Banco Safra
+🏦 Processando: Banco Original (original)...
+📊 Coletando dados de: original
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-original/
+❌ Erro ao fazer scraping de original: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Banco Original
+🏦 Processando: Banco Next (next)...
+📊 Coletando dados de: next
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-next/
+❌ Erro ao fazer scraping de next: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Banco Next
+🏦 Processando: Neon (neon)...
+📊 Coletando dados de: neon
+🔗 URL: https://www.reclameaqui.com.br/empresa/neon-pagamentos/
+❌ Erro ao fazer scraping de neon: Error [ReferenceError]: __name is not defined
+    at evaluate (evaluate at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:2:3676), <anonymous>:0:26)
+    at ExecutionContext.#evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:456:34)
+    at async ExecutionContext.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\ExecutionContext.ts:293:12)
+    at async IsolatedWorld.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\IsolatedWorld.ts:196:12)
+    at async CdpFrame.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Frame.ts:488:12)
+    at async CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:20)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ⚠️  Nenhum dado coletado para Neon
+🔒 Navegador fechado
+
+======================================================================
+📈 RESUMO DA ATUALIZAÇÃO
+======================================================================
+✅ Sucesso: 0 bancos
+⚠️  Pulados: 14 bancos
+❌ Erro: 0 bancos
+📊 Total processado: 14 bancos
+
+📋 Mudanças detectadas:
+----------------------------------------------------------------------
+----------------------------------------------------------------------
+
+💾 Total de registros históricos: 14
+⏰ Próxima execução sugerida: 11/03/2026, 14:00:00
+
+✨ Atualização finalizada com sucesso!
+[11/03/2026 12:04:13,77] Coleta finalizada 
+ 
+============================================ 
+[11/03/2026 12:18:32,56] Iniciando coleta REAL do Reclame Aqui... 
+============================================ 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🔄 ATUALIZAÇÃO REAL - RECLAME AQUI (Scraping)             ║
+║                                                                      ║
+║  Este script coleta dados REAIS diretamente do site reclameaqui.com ║
+║  Executar 3x ao dia: 8h, 14h, 20h                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔄 Iniciando coleta REAL de dados do Reclame Aqui...
+📅 Data/Hora: 11/03/2026, 12:18:34
+
+📊 Encontrados 14 bancos para atualizar
+
+🌐 Inicializando navegador Puppeteer...
+✅ Navegador iniciado
+🏦 Processando: Nubank (nubank)...
+📊 Coletando dados de: nubank
+🔗 URL: https://www.reclameaqui.com.br/empresa/nu-pagamentos-sa-nubank/
+✅ Dados coletados: nubank
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🏦 Processando: Itaú Unibanco (itau)...
+📊 Coletando dados de: itau
+🔗 URL: https://www.reclameaqui.com.br/empresa/itau-unibanco/
+✅ Dados coletados: itau
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🏦 Processando: Banco do Brasil (bb)...
+📊 Coletando dados de: bb
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-do-brasil/
+✅ Dados coletados: bb
+   Reputação: 7/10
+   Resolução: 2.4%
+   Reclamações: 24
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 2.4%
+      Reclamações: 24
+🏦 Processando: Bradesco (bradesco)...
+📊 Coletando dados de: bradesco
+🔗 URL: https://www.reclameaqui.com.br/empresa/bradesco/
+✅ Dados coletados: bradesco
+   Reputação: 7/10
+   Resolução: 1.5%
+   Reclamações: 15
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 1.5%
+      Reclamações: 15
+🏦 Processando: Caixa Econômica Federal (caixa)...
+📊 Coletando dados de: caixa
+🔗 URL: https://www.reclameaqui.com.br/empresa/caixa-economica-federal/
+✅ Dados coletados: caixa
+   Reputação: 7/10
+   Resolução: 2.4%
+   Reclamações: 24
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 2.4%
+      Reclamações: 24
+🏦 Processando: Santander Brasil (santander)...
+📊 Coletando dados de: santander
+🔗 URL: https://www.reclameaqui.com.br/empresa/santander/
+✅ Dados coletados: santander
+   Reputação: 7/10
+   Resolução: 1.6%
+   Reclamações: 16
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 1.6%
+      Reclamações: 16
+🏦 Processando: Banco Inter (inter)...
+📊 Coletando dados de: inter
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-inter/
+✅ Dados coletados: inter
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🏦 Processando: C6 Bank (c6)...
+📊 Coletando dados de: c6
+🔗 URL: https://www.reclameaqui.com.br/empresa/c6-bank/
+✅ Dados coletados: c6
+   Reputação: 7/10
+   Resolução: 6%
+   Reclamações: 6
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 6%
+      Reclamações: 6
+🏦 Processando: BTG Pactual (btg)...
+📊 Coletando dados de: btg
+🔗 URL: https://www.reclameaqui.com.br/empresa/btg-pactual/
+✅ Dados coletados: btg
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🏦 Processando: PagBank (pagbank)...
+📊 Coletando dados de: pagbank
+🔗 URL: https://www.reclameaqui.com.br/empresa/pagbank/
+✅ Dados coletados: pagbank
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🏦 Processando: Banco Safra (safra)...
+📊 Coletando dados de: safra
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-safra/
+✅ Dados coletados: safra
+   Reputação: 7/10
+   Resolução: 145%
+   Reclamações: 145
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 145%
+      Reclamações: 145
+🏦 Processando: Banco Original (original)...
+📊 Coletando dados de: original
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-original/
+✅ Dados coletados: original
+   Reputação: 7/10
+   Resolução: 34%
+   Reclamações: 34
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 34%
+      Reclamações: 34
+🏦 Processando: Banco Next (next)...
+📊 Coletando dados de: next
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-next/
+✅ Dados coletados: next
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🏦 Processando: Neon (neon)...
+📊 Coletando dados de: neon
+🔗 URL: https://www.reclameaqui.com.br/empresa/neon-pagamentos/
+✅ Dados coletados: neon
+   Reputação: 7/10
+   Resolução: 70%
+   Reclamações: 1000
+   ✅ Dados atualizados
+      Score: 7.0 → 7.0 (+0.0)
+      Resolução: 70%
+      Reclamações: 1.000
+🔒 Navegador fechado
+
+======================================================================
+📈 RESUMO DA ATUALIZAÇÃO
+======================================================================
+✅ Sucesso: 14 bancos
+⚠️  Pulados: 0 bancos
+❌ Erro: 0 bancos
+📊 Total processado: 14 bancos
+
+📋 Mudanças detectadas:
+----------------------------------------------------------------------
+  Nubank                         7.0/10     → +0.0
+  Itaú Unibanco                  7.0/10     → +0.0
+  Banco do Brasil                7.0/10     → +0.0
+  Bradesco                       7.0/10     → +0.0
+  Caixa Econômica Federal        7.0/10     → +0.0
+  Santander Brasil               7.0/10     → +0.0
+  Banco Inter                    7.0/10     → +0.0
+  C6 Bank                        7.0/10     → +0.0
+  BTG Pactual                    7.0/10     → +0.0
+  PagBank                        7.0/10     → +0.0
+  Banco Safra                    7.0/10     → +0.0
+  Banco Original                 7.0/10     → +0.0
+  Banco Next                     7.0/10     → +0.0
+  Neon                           7.0/10     → +0.0
+----------------------------------------------------------------------
+
+💾 Total de registros históricos: 42
+⏰ Próxima execução sugerida: 11/03/2026, 14:00:00
+
+✨ Atualização finalizada com sucesso!
+[11/03/2026 12:20:45,51] Coleta finalizada 
+ 
+============================================ 
+[11/03/2026 14:00:00,37] Iniciando coleta REAL do Reclame Aqui... 
+============================================ 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🔄 ATUALIZAÇÃO REAL - RECLAME AQUI (Scraping)             ║
+║                                                                      ║
+║  Este script coleta dados REAIS diretamente do site reclameaqui.com ║
+║  Executar 3x ao dia: 8h, 14h, 20h                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔄 Iniciando coleta REAL de dados do Reclame Aqui...
+📅 Data/Hora: 11/03/2026, 14:00:01
+
+📊 Encontrados 14 bancos para atualizar
+
+🌐 Inicializando navegador Puppeteer...
+✅ Navegador iniciado
+🏦 Processando: Nubank (nubank)...
+📊 Coletando dados de: nubank
+🔗 URL: https://www.reclameaqui.com.br/empresa/nu-pagamentos-sa-nubank/
+⚠️ Métricas incompletas para nubank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Nubank
+🏦 Processando: Itaú Unibanco (itau)...
+📊 Coletando dados de: itau
+🔗 URL: https://www.reclameaqui.com.br/empresa/itau-unibanco/
+⚠️ Métricas incompletas para itau. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Itaú Unibanco
+🏦 Processando: Banco do Brasil (bb)...
+📊 Coletando dados de: bb
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-do-brasil/
+✅ Dados coletados: bb
+   Reputação: 77/10
+   Resolução: 983%
+   Reclamações: 23916
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 983%
+      Reclamações: 23.916
+🏦 Processando: Bradesco (bradesco)...
+📊 Coletando dados de: bradesco
+🔗 URL: https://www.reclameaqui.com.br/empresa/bradesco/
+✅ Dados coletados: bradesco
+   Reputação: 71/10
+   Resolução: 997%
+   Reclamações: 30623
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 997%
+      Reclamações: 30.623
+🏦 Processando: Caixa Econômica Federal (caixa)...
+📊 Coletando dados de: caixa
+🔗 URL: https://www.reclameaqui.com.br/empresa/caixa-economica-federal/
+✅ Dados coletados: caixa
+   Reputação: 71/10
+   Resolução: 955%
+   Reclamações: 35576
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 955%
+      Reclamações: 35.576
+🏦 Processando: Santander Brasil (santander)...
+📊 Coletando dados de: santander
+🔗 URL: https://www.reclameaqui.com.br/empresa/santander/
+✅ Dados coletados: santander
+   Reputação: 58/10
+   Resolução: 926%
+   Reclamações: 33798
+   ✅ Dados atualizados
+      Score: 58.0 → 58.0 (+0.0)
+      Resolução: 926%
+      Reclamações: 33.798
+🏦 Processando: Banco Inter (inter)...
+📊 Coletando dados de: inter
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-inter/
+⚠️ Métricas incompletas para inter. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Banco Inter
+🏦 Processando: C6 Bank (c6)...
+📊 Coletando dados de: c6
+🔗 URL: https://www.reclameaqui.com.br/empresa/c6-bank/
+✅ Dados coletados: c6
+   Reputação: 70/10
+   Resolução: 951%
+   Reclamações: 21157
+   ✅ Dados atualizados
+      Score: 70.0 → 70.0 (+0.0)
+      Resolução: 951%
+      Reclamações: 21.157
+🏦 Processando: BTG Pactual (btg)...
+📊 Coletando dados de: btg
+🔗 URL: https://www.reclameaqui.com.br/empresa/btg-pactual/
+⚠️ Métricas incompletas para btg. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para BTG Pactual
+🏦 Processando: PagBank (pagbank)...
+📊 Coletando dados de: pagbank
+🔗 URL: https://www.reclameaqui.com.br/empresa/pagbank/
+⚠️ Métricas incompletas para pagbank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para PagBank
+🏦 Processando: Banco Safra (safra)...
+📊 Coletando dados de: safra
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-safra/
+✅ Dados coletados: safra
+   Reputação: 73/10
+   Resolução: 961%
+   Reclamações: 813
+   ✅ Dados atualizados
+      Score: 73.0 → 73.0 (+0.0)
+      Resolução: 961%
+      Reclamações: 813
+🏦 Processando: Banco Original (original)...
+📊 Coletando dados de: original
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-original/
+✅ Dados coletados: original
+   Reputação: 77/10
+   Resolução: 665%
+   Reclamações: 179
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 665%
+      Reclamações: 179
+🏦 Processando: Banco Next (next)...
+📊 Coletando dados de: next
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-next/
+⚠️ Métricas incompletas para next. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Banco Next
+🏦 Processando: Neon (neon)...
+📊 Coletando dados de: neon
+🔗 URL: https://www.reclameaqui.com.br/empresa/neon-pagamentos/
+⚠️ Métricas incompletas para neon. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Neon
+🔒 Navegador fechado
+
+======================================================================
+📈 RESUMO DA ATUALIZAÇÃO
+======================================================================
+✅ Sucesso: 7 bancos
+⚠️  Pulados: 7 bancos
+❌ Erro: 0 bancos
+📊 Total processado: 14 bancos
+
+📋 Mudanças detectadas:
+----------------------------------------------------------------------
+  Banco do Brasil                77.0/10    → +0.0
+  Bradesco                       71.0/10    → +0.0
+  Caixa Econômica Federal        71.0/10    → +0.0
+  Santander Brasil               58.0/10    → +0.0
+  C6 Bank                        70.0/10    → +0.0
+  Banco Safra                    73.0/10    → +0.0
+  Banco Original                 77.0/10    → +0.0
+----------------------------------------------------------------------
+
+💾 Total de registros históricos: 56
+⏰ Próxima execução sugerida: 11/03/2026, 20:00:00
+
+✨ Atualização finalizada com sucesso!
+[11/03/2026 14:01:45,87] Coleta finalizada 
+ 
+============================================ 
+[11/03/2026 20:00:00,42] Iniciando coleta REAL do Reclame Aqui... 
+============================================ 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🔄 ATUALIZAÇÃO REAL - RECLAME AQUI (Scraping)             ║
+║                                                                      ║
+║  Este script coleta dados REAIS diretamente do site reclameaqui.com ║
+║  Executar 3x ao dia: 8h, 14h, 20h                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔄 Iniciando coleta REAL de dados do Reclame Aqui...
+📅 Data/Hora: 11/03/2026, 20:00:01
+
+📊 Encontrados 14 bancos para atualizar
+
+🌐 Inicializando navegador Puppeteer...
+✅ Navegador iniciado
+🏦 Processando: Nubank (nubank)...
+📊 Coletando dados de: nubank
+🔗 URL: https://www.reclameaqui.com.br/empresa/nu-pagamentos-sa-nubank/
+⚠️ Métricas incompletas para nubank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Nubank
+🏦 Processando: Itaú Unibanco (itau)...
+📊 Coletando dados de: itau
+🔗 URL: https://www.reclameaqui.com.br/empresa/itau-unibanco/
+⚠️ Métricas incompletas para itau. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Itaú Unibanco
+🏦 Processando: Banco do Brasil (bb)...
+📊 Coletando dados de: bb
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-do-brasil/
+✅ Dados coletados: bb
+   Reputação: 77/10
+   Resolução: 983%
+   Reclamações: 23916
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 983%
+      Reclamações: 23.916
+🏦 Processando: Bradesco (bradesco)...
+📊 Coletando dados de: bradesco
+🔗 URL: https://www.reclameaqui.com.br/empresa/bradesco/
+✅ Dados coletados: bradesco
+   Reputação: 71/10
+   Resolução: 997%
+   Reclamações: 30623
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 997%
+      Reclamações: 30.623
+🏦 Processando: Caixa Econômica Federal (caixa)...
+📊 Coletando dados de: caixa
+🔗 URL: https://www.reclameaqui.com.br/empresa/caixa-economica-federal/
+✅ Dados coletados: caixa
+   Reputação: 71/10
+   Resolução: 965%
+   Reclamações: 35550
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 965%
+      Reclamações: 35.550
+🏦 Processando: Santander Brasil (santander)...
+📊 Coletando dados de: santander
+🔗 URL: https://www.reclameaqui.com.br/empresa/santander/
+✅ Dados coletados: santander
+   Reputação: 58/10
+   Resolução: 926%
+   Reclamações: 33798
+   ✅ Dados atualizados
+      Score: 58.0 → 58.0 (+0.0)
+      Resolução: 926%
+      Reclamações: 33.798
+🏦 Processando: Banco Inter (inter)...
+📊 Coletando dados de: inter
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-inter/
+⚠️ Métricas incompletas para inter. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Banco Inter
+🏦 Processando: C6 Bank (c6)...
+📊 Coletando dados de: c6
+🔗 URL: https://www.reclameaqui.com.br/empresa/c6-bank/
+✅ Dados coletados: c6
+   Reputação: 70/10
+   Resolução: 951%
+   Reclamações: 21157
+   ✅ Dados atualizados
+      Score: 70.0 → 70.0 (+0.0)
+      Resolução: 951%
+      Reclamações: 21.157
+🏦 Processando: BTG Pactual (btg)...
+📊 Coletando dados de: btg
+🔗 URL: https://www.reclameaqui.com.br/empresa/btg-pactual/
+⚠️ Métricas incompletas para btg. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para BTG Pactual
+🏦 Processando: PagBank (pagbank)...
+📊 Coletando dados de: pagbank
+🔗 URL: https://www.reclameaqui.com.br/empresa/pagbank/
+⚠️ Métricas incompletas para pagbank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para PagBank
+🏦 Processando: Banco Safra (safra)...
+📊 Coletando dados de: safra
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-safra/
+✅ Dados coletados: safra
+   Reputação: 73/10
+   Resolução: 961%
+   Reclamações: 813
+   ✅ Dados atualizados
+      Score: 73.0 → 73.0 (+0.0)
+      Resolução: 961%
+      Reclamações: 813
+🏦 Processando: Banco Original (original)...
+📊 Coletando dados de: original
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-original/
+✅ Dados coletados: original
+   Reputação: 77/10
+   Resolução: 665%
+   Reclamações: 179
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 665%
+      Reclamações: 179
+🏦 Processando: Banco Next (next)...
+📊 Coletando dados de: next
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-next/
+⚠️ Métricas incompletas para next. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Banco Next
+🏦 Processando: Neon (neon)...
+📊 Coletando dados de: neon
+🔗 URL: https://www.reclameaqui.com.br/empresa/neon-pagamentos/
+⚠️ Métricas incompletas para neon. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Neon
+🔒 Navegador fechado
+
+======================================================================
+📈 RESUMO DA ATUALIZAÇÃO
+======================================================================
+✅ Sucesso: 7 bancos
+⚠️  Pulados: 7 bancos
+❌ Erro: 0 bancos
+📊 Total processado: 14 bancos
+
+📋 Mudanças detectadas:
+----------------------------------------------------------------------
+  Banco do Brasil                77.0/10    → +0.0
+  Bradesco                       71.0/10    → +0.0
+  Caixa Econômica Federal        71.0/10    → +0.0
+  Santander Brasil               58.0/10    → +0.0
+  C6 Bank                        70.0/10    → +0.0
+  Banco Safra                    73.0/10    → +0.0
+  Banco Original                 77.0/10    → +0.0
+----------------------------------------------------------------------
+
+💾 Total de registros históricos: 63
+⏰ Próxima execução sugerida: 12/03/2026, 08:00:00
+
+✨ Atualização finalizada com sucesso!
+[11/03/2026 20:01:52,93] Coleta finalizada 
+ 
+============================================ 
+[12/03/2026 14:00:01,94] Iniciando coleta REAL do Reclame Aqui... 
+============================================ 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🔄 ATUALIZAÇÃO REAL - RECLAME AQUI (Scraping)             ║
+║                                                                      ║
+║  Este script coleta dados REAIS diretamente do site reclameaqui.com ║
+║  Executar 3x ao dia: 8h, 14h, 20h                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔄 Iniciando coleta REAL de dados do Reclame Aqui...
+📅 Data/Hora: 12/03/2026, 14:00:04
+
+📊 Encontrados 14 bancos para atualizar
+
+🌐 Inicializando navegador Puppeteer...
+✅ Navegador iniciado
+🏦 Processando: Nubank (nubank)...
+📊 Coletando dados de: nubank
+🔗 URL: https://www.reclameaqui.com.br/empresa/nu-pagamentos-sa-nubank/
+⚠️ Métricas incompletas para nubank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Nubank
+🏦 Processando: Itaú Unibanco (itau)...
+📊 Coletando dados de: itau
+🔗 URL: https://www.reclameaqui.com.br/empresa/itau-unibanco/
+⚠️ Métricas incompletas para itau. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Itaú Unibanco
+🏦 Processando: Banco do Brasil (bb)...
+📊 Coletando dados de: bb
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-do-brasil/
+✅ Dados coletados: bb
+   Reputação: 77/10
+   Resolução: 983%
+   Reclamações: 23916
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 983%
+      Reclamações: 23.916
+🏦 Processando: Bradesco (bradesco)...
+📊 Coletando dados de: bradesco
+🔗 URL: https://www.reclameaqui.com.br/empresa/bradesco/
+✅ Dados coletados: bradesco
+   Reputação: 71/10
+   Resolução: 998%
+   Reclamações: 30613
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 998%
+      Reclamações: 30.613
+🏦 Processando: Caixa Econômica Federal (caixa)...
+📊 Coletando dados de: caixa
+🔗 URL: https://www.reclameaqui.com.br/empresa/caixa-economica-federal/
+✅ Dados coletados: caixa
+   Reputação: 71/10
+   Resolução: 965%
+   Reclamações: 35550
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 965%
+      Reclamações: 35.550
+🏦 Processando: Santander Brasil (santander)...
+📊 Coletando dados de: santander
+🔗 URL: https://www.reclameaqui.com.br/empresa/santander/
+✅ Dados coletados: santander
+   Reputação: 58/10
+   Resolução: 926%
+   Reclamações: 33798
+   ✅ Dados atualizados
+      Score: 58.0 → 58.0 (+0.0)
+      Resolução: 926%
+      Reclamações: 33.798
+🏦 Processando: Banco Inter (inter)...
+📊 Coletando dados de: inter
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-inter/
+⚠️ Métricas incompletas para inter. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Banco Inter
+🏦 Processando: C6 Bank (c6)...
+📊 Coletando dados de: c6
+🔗 URL: https://www.reclameaqui.com.br/empresa/c6-bank/
+✅ Dados coletados: c6
+   Reputação: 71/10
+   Resolução: 956%
+   Reclamações: 21157
+   ✅ Dados atualizados
+      Score: 70.0 → 71.0 (+1.0)
+      Resolução: 956%
+      Reclamações: 21.157
+🏦 Processando: BTG Pactual (btg)...
+📊 Coletando dados de: btg
+🔗 URL: https://www.reclameaqui.com.br/empresa/btg-pactual/
+⚠️ Métricas incompletas para btg. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para BTG Pactual
+🏦 Processando: PagBank (pagbank)...
+📊 Coletando dados de: pagbank
+🔗 URL: https://www.reclameaqui.com.br/empresa/pagbank/
+⚠️ Métricas incompletas para pagbank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para PagBank
+🏦 Processando: Banco Safra (safra)...
+📊 Coletando dados de: safra
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-safra/
+✅ Dados coletados: safra
+   Reputação: 74/10
+   Resolução: 972%
+   Reclamações: 811
+   ✅ Dados atualizados
+      Score: 73.0 → 74.0 (+1.0)
+      Resolução: 972%
+      Reclamações: 811
+🏦 Processando: Banco Original (original)...
+📊 Coletando dados de: original
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-original/
+✅ Dados coletados: original
+   Reputação: 77/10
+   Resolução: 665%
+   Reclamações: 179
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 665%
+      Reclamações: 179
+🏦 Processando: Banco Next (next)...
+📊 Coletando dados de: next
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-next/
+⚠️ Métricas incompletas para next. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Banco Next
+🏦 Processando: Neon (neon)...
+📊 Coletando dados de: neon
+🔗 URL: https://www.reclameaqui.com.br/empresa/neon-pagamentos/
+⚠️ Métricas incompletas para neon. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Neon
+🔒 Navegador fechado
+
+======================================================================
+📈 RESUMO DA ATUALIZAÇÃO
+======================================================================
+✅ Sucesso: 7 bancos
+⚠️  Pulados: 7 bancos
+❌ Erro: 0 bancos
+📊 Total processado: 14 bancos
+
+📋 Mudanças detectadas:
+----------------------------------------------------------------------
+  Banco do Brasil                77.0/10    → +0.0
+  Bradesco                       71.0/10    → +0.0
+  Caixa Econômica Federal        71.0/10    → +0.0
+  Santander Brasil               58.0/10    → +0.0
+  C6 Bank                        71.0/10    📈 +1.0
+  Banco Safra                    74.0/10    📈 +1.0
+  Banco Original                 77.0/10    → +0.0
+----------------------------------------------------------------------
+
+🚨 ALERTAS: Mudanças Significativas (>0.5 pontos)
+----------------------------------------------------------------------
+  ⚠️  C6 Bank: 70.0 → 71.0 (+1.0)
+  ⚠️  Banco Safra: 73.0 → 74.0 (+1.0)
+----------------------------------------------------------------------
+
+💾 Total de registros históricos: 70
+⏰ Próxima execução sugerida: 12/03/2026, 20:00:00
+
+✨ Atualização finalizada com sucesso!
+[12/03/2026 14:01:57,84] Coleta finalizada 
+ 
+============================================ 
+[12/03/2026 20:00:02,92] Iniciando coleta REAL do Reclame Aqui... 
+============================================ 
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                                                                      ║
+║           🔄 ATUALIZAÇÃO REAL - RECLAME AQUI (Scraping)             ║
+║                                                                      ║
+║  Este script coleta dados REAIS diretamente do site reclameaqui.com ║
+║  Executar 3x ao dia: 8h, 14h, 20h                                   ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🔄 Iniciando coleta REAL de dados do Reclame Aqui...
+📅 Data/Hora: 12/03/2026, 20:00:06
+
+📊 Encontrados 14 bancos para atualizar
+
+🌐 Inicializando navegador Puppeteer...
+✅ Navegador iniciado
+🏦 Processando: Nubank (nubank)...
+📊 Coletando dados de: nubank
+🔗 URL: https://www.reclameaqui.com.br/empresa/nu-pagamentos-sa-nubank/
+⚠️ Métricas incompletas para nubank. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Nubank
+🏦 Processando: Itaú Unibanco (itau)...
+📊 Coletando dados de: itau
+🔗 URL: https://www.reclameaqui.com.br/empresa/itau-unibanco/
+⚠️ Métricas incompletas para itau. Pulando atualização para evitar gravar valores incorretos.
+   score=null, resolved=null, complaints=null
+   amostraTexto="A página que você estava procurando não existe :( Você pode ter digitado incorretamente o endereço ou a página pode ter sido removida, mas quem sabe uma busca rápida possa ajudar? página inicial"
+   ⚠️  Nenhum dado coletado para Itaú Unibanco
+🏦 Processando: Banco do Brasil (bb)...
+📊 Coletando dados de: bb
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-do-brasil/
+✅ Dados coletados: bb
+   Reputação: 77/10
+   Resolução: 987%
+   Reclamações: 23898
+   ✅ Dados atualizados
+      Score: 77.0 → 77.0 (+0.0)
+      Resolução: 987%
+      Reclamações: 23.898
+🏦 Processando: Bradesco (bradesco)...
+📊 Coletando dados de: bradesco
+🔗 URL: https://www.reclameaqui.com.br/empresa/bradesco/
+✅ Dados coletados: bradesco
+   Reputação: 71/10
+   Resolução: 998%
+   Reclamações: 30613
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 998%
+      Reclamações: 30.613
+🏦 Processando: Caixa Econômica Federal (caixa)...
+📊 Coletando dados de: caixa
+🔗 URL: https://www.reclameaqui.com.br/empresa/caixa-economica-federal/
+✅ Dados coletados: caixa
+   Reputação: 71/10
+   Resolução: 965%
+   Reclamações: 35550
+   ✅ Dados atualizados
+      Score: 71.0 → 71.0 (+0.0)
+      Resolução: 965%
+      Reclamações: 35.550
+🏦 Processando: Santander Brasil (santander)...
+📊 Coletando dados de: santander
+🔗 URL: https://www.reclameaqui.com.br/empresa/santander/
+✅ Dados coletados: santander
+   Reputação: 58/10
+   Resolução: 927%
+   Reclamações: 33794
+   ✅ Dados atualizados
+      Score: 58.0 → 58.0 (+0.0)
+      Resolução: 927%
+      Reclamações: 33.794
+🏦 Processando: Banco Inter (inter)...
+📊 Coletando dados de: inter
+🔗 URL: https://www.reclameaqui.com.br/empresa/banco-inter/
+❌ Erro ao fazer scraping de inter: Error: Attempted to use detached Frame 'D03EEA7EEF6559B47BEF040582C1E8FF'.
+    at CdpFrame.<anonymous> (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\util\decorators.ts:61:15)
+    at CdpPage.evaluate (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\api\Page.ts:2362:35)
+    at ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:118:31)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+   ❌ Erro ao processar Banco Inter: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpPage.close (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Page.ts:1262:24)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:231:7)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: C6 Bank (c6)...
+   ❌ Erro ao processar C6 Bank: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: BTG Pactual (btg)...
+   ❌ Erro ao processar BTG Pactual: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: PagBank (pagbank)...
+   ❌ Erro ao processar PagBank: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: Banco Safra (safra)...
+   ❌ Erro ao processar Banco Safra: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: Banco Original (original)...
+   ❌ Erro ao processar Banco Original: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: Banco Next (next)...
+   ❌ Erro ao processar Banco Next: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🏦 Processando: Neon (neon)...
+   ❌ Erro ao processar Neon: ConnectionClosedError: Connection closed.
+    at Connection._rawSend (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:148:29)
+    at Connection.send (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Connection.ts:134:17)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:371:47)
+    at CdpBrowser._createPageInContext (C:\Dev\Radar-Bank\node_modules\puppeteer-extra\src\index.ts:270:43)
+    at CdpBrowserContext.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\BrowserContext.ts:128:32)
+    at async CdpBrowser.newPage (C:\Dev\Radar-Bank\node_modules\puppeteer-core\src\cdp\Browser.ts:358:12)
+    at async ReclameAquiScraper.scrapeBankData (C:\Dev\Radar-Bank\server\reclameaqui-scraper.ts:97:18)
+    at async updateReputationFromRealData (C:\Dev\Radar-Bank\scripts\update-reputation-real.ts:62:32)
+🔒 Navegador fechado
+
+======================================================================
+📈 RESUMO DA ATUALIZAÇÃO
+======================================================================
+✅ Sucesso: 4 bancos
+⚠️  Pulados: 2 bancos
+❌ Erro: 8 bancos
+📊 Total processado: 14 bancos
+
+📋 Mudanças detectadas:
+----------------------------------------------------------------------
+  Banco do Brasil                77.0/10    → +0.0
+  Bradesco                       71.0/10    → +0.0
+  Caixa Econômica Federal        71.0/10    → +0.0
+  Santander Brasil               58.0/10    → +0.0
+----------------------------------------------------------------------
+
+💾 Total de registros históricos: 74
+⏰ Próxima execução sugerida: 13/03/2026, 08:00:00
+
+✨ Atualização finalizada com sucesso!
+^C

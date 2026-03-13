@@ -1,13 +1,8 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+export default function LoginPage() {
+  redirect("/dashboard");
+}
 import { Logo } from "@/components/ui/logo";
 import { Activity, ArrowRight, Shield, Lock, Eye, EyeOff, AlertTriangle, TrendingDown, Stethoscope, AlertCircle, Sparkles, TrendingUp, BarChart3, HeartPulse } from "lucide-react";
 

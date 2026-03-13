@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BanksTable } from "@/components/banks-table";
 import { StatsOverview } from "@/components/stats-overview";
 
+// Página sempre renderizada ao vivo — sem cache de página ou dados
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 async function getBanksWithScores() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

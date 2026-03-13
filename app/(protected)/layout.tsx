@@ -1,20 +1,10 @@
-import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
-import { getCurrentUser } from "@/lib/auth-db";
 
-export default async function ProtectedLayout({
+export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Verificar autenticação no servidor
-  const user = await getCurrentUser();
-
-  // Se não autenticado, redirecionar para login
-  if (!user) {
-    redirect("/login");
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-purple-50/20 to-pink-50/20">
       <Sidebar />

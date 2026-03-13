@@ -136,9 +136,51 @@ export class DataIngestionService {
       console.log(`[INGESTÃO] Novo banco criado: ${bank.name}`);
     }
 
-    // 2. Criar snapshot com todos os dados
-    await prisma.bankSnapshot.create({
-      data: {
+    // 2. Criar ou atualizar snapshot com todos os dados
+    await prisma.bankSnapshot.upsert({
+      where: {
+        bankId_date: {
+          bankId: bank.id,
+          date,
+        },
+      },
+      update: {
+        // Capital
+        basilRatio: bankData.basileia,
+        tier1Ratio: bankData.tier1,
+        cet1Ratio: bankData.cet1,
+        leverageRatio: bankData.alavancagem,
+        
+        // Liquidez
+        lcr: bankData.lcr,
+        nsfr: bankData.nsfr,
+        quickLiquidity: bankData.liquidez,
+        loanToDeposit: bankData.loanToDeposit,
+        
+        // Rentabilidade
+        roe: bankData.roe,
+        roa: bankData.roa,
+        nim: bankData.nim,
+        costToIncome: bankData.costToIncome,
+        
+        // Qualidade de Crédito
+        nplRatio: bankData.inadimplencia,
+        coverageRatio: bankData.coverageRatio,
+        writeOffRate: bankData.writeOffRate,
+        creditQuality: bankData.creditQuality,
+        
+        // Tamanho
+        totalAssets: bankData.ativoTotal,
+        equity: bankData.patrimonioLiquido,
+        totalDeposits: bankData.totalDeposits,
+        loanPortfolio: bankData.loanPortfolio,
+        
+        // Crescimento
+        assetGrowth: bankData.assetGrowth,
+        loanGrowth: bankData.loanGrowth,
+        depositGrowth: bankData.depositGrowth,
+      },
+      create: {
         bankId: bank.id,
         date,
         

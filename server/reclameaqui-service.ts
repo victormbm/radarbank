@@ -154,8 +154,28 @@ export class ReclameAquiService {
    */
   async saveReputationData(bankId: string, data: ReclameAquiData): Promise<void> {
     try {
-      await prisma.bankReputation.create({
-        data: {
+      await prisma.bankReputation.upsert({
+        where: {
+          bankId_source_referenceDate: {
+            bankId,
+            source: 'reclameaqui',
+            referenceDate: data.lastUpdate,
+          },
+        },
+        update: {
+          reputationScore: data.reputationScore,
+          resolvedRate: data.resolvedRate,
+          averageRating: data.averageRating,
+          totalComplaints: data.totalComplaints,
+          responseTime: data.responseTime,
+          topComplaint1: data.topComplaints[0] || null,
+          topComplaint2: data.topComplaints[1] || null,
+          topComplaint3: data.topComplaints[2] || null,
+          sentimentScore: data.sentimentScore,
+          rawData: JSON.stringify(data),
+          lastScraped: new Date(),
+        },
+        create: {
           bankId,
           source: 'reclameaqui',
           referenceDate: data.lastUpdate,
@@ -223,13 +243,13 @@ export class ReclameAquiService {
     const mockData: Record<string, ReclameAquiData> = {
       nubank: {
         bankName: 'Nubank',
-        reputationScore: 8.2,
-        resolvedRate: 78.5,
-        averageRating: 4.1,
+        reputationScore: 8.6,
+        resolvedRate: 81.2,
+        averageRating: 4.3,
         totalComplaints: 45230,
-        responseTime: 3.2,
+        responseTime: 2.8,
         topComplaints: ['App lento', 'Bloqueio de cartão', 'Atendimento'],
-        sentimentScore: 0.65,
+        sentimentScore: 0.72,
         lastUpdate: new Date(),
       },
       itau: {

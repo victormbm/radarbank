@@ -22,7 +22,7 @@ export interface BCBBankData {
   loanPortfolio?: number;
   // Rentabilidade
   roe?: number;
-  roa?: number;
+  roa?: number;S
   nim?: number;
   costToIncome?: number;
   // Liquidez
