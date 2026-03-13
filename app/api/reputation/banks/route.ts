@@ -1,27 +1,30 @@
 /**
- * API para análise combinada de solidez financeira + reputação
- * 
+ * API para análise combinada de solidez financeira + reclamações
+ *
+ * Fonte de dados: Banco Central do Brasil (BCB) — dados públicos, uso legal (LAI)
+ * https://dadosabertos.bcb.gov.br/dataset/reclamacoes-recebidas-pelo-banco-central
+ *
  * Endpoints:
- * GET /api/reputation/banks - Lista todos os bancos com reputação
- * GET /api/reputation/banks/:id - Detalhes completos de um banco
- * GET /api/reputation/ranking - Ranking por score combinado
- * GET /api/reputation/comparison - Comparação de 2+ bancos
+ * GET /api/reputation/banks          - Lista todos os bancos com dados combinados
+ * GET /api/reputation/banks?action=ranking      - Ranking por score combinado
+ * GET /api/reputation/banks?bankId=<id>         - Detalhes de um banco
+ * GET /api/reputation/banks?action=compare      - Comparação de bancos
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-// Calcular score combinado (30% BCB + 70% Reputação)
+// Calcular score combinado (60% saúde financeira BCB + 40% reclamações BCB)
 function calculateCombinedScore(
   basiliaScore: number | null,
   reputationScore: number | null
 ): number {
   if (!basiliaScore && !reputationScore) return 0;
-  
-  const bcbWeight = basiliaScore ? (basiliaScore / 20) * 30 : 0; // Basília até 20%
-  const reputationWeight = reputationScore ? (reputationScore / 10) * 70 : 0; // Reputação até 10
-  
-  return Math.round((bcbWeight + reputationWeight) * 10) / 10;
+
+  const bcbWeight = basiliaScore ? (basiliaScore / 20) * 60 : 0; // Basileia até 20%
+  const complaintsWeight = reputationScore ? (reputationScore / 10) * 40 : 0; // Índice reclamações 0-10
+
+  return Math.round((bcbWeight + complaintsWeight) * 10) / 10;
 }
 
 /**
@@ -64,7 +67,7 @@ async function handleBanksList() {
         take: 1,
       },
       reputation: {
-        where: { source: 'reclameaqui' },
+        where: { source: 'bcb' },
         orderBy: { referenceDate: 'desc' },
         take: 1,
       },
@@ -80,8 +83,8 @@ async function handleBanksList() {
       name: bank.name,
       slug: bank.slug,
       type: bank.type,
-      
-      // Dados Financeiros (BCB)
+
+      // Dados Financeiros (BCB - IFData)
       financialMetrics: latestSnapshot ? {
         basilRatio: latestSnapshot.basilRatio,
         roe: latestSnapshot.roe,
@@ -91,7 +94,7 @@ async function handleBanksList() {
         date: latestSnapshot.date,
       } : null,
 
-      // Dados de Reputação (Reclame Aqui)
+      // Dados de Reclamações (BCB — Ranking Oficial de Reclamações)
       reputation: latestReputation ? {
         reputationScore: latestReputation.reputationScore,
         resolvedRate: latestReputation.resolvedRate,
@@ -138,7 +141,7 @@ async function handleBankDetail(bankId: string) {
         take: 7, // Últimos 7 dias
       },
       reputation: {
-        where: { source: 'reclameaqui' },
+        where: { source: 'bcb' },
         orderBy: { referenceDate: 'desc' },
         take: 7, // Últimas 7 coletas
       },
@@ -219,7 +222,7 @@ async function handleRanking() {
         take: 1,
       },
       reputation: {
-        where: { source: 'reclameaqui' },
+        where: { source: 'bcb' },
         orderBy: { referenceDate: 'desc' },
         take: 1,
       },
@@ -264,7 +267,7 @@ async function handleComparison(bankIds: string[]) {
         take: 1,
       },
       reputation: {
-        where: { source: 'reclameaqui' },
+        where: { source: 'bcb' },
         orderBy: { referenceDate: 'desc' },
         take: 1,
       },

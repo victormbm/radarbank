@@ -1,8 +1,9 @@
-import { redirect } from "next/navigation";
+'use client';
 
-export default function PricingPage() {
-  redirect("/dashboard");
-}
+import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function PricingPage() {
   const plans = [

@@ -172,6 +172,9 @@ export async function login(
     }
 
     // Comparar senha com hash
+    if (!user.password) {
+      return { success: false, error: 'Email ou senha inválidos' };
+    }
     const isValidPassword = await comparePassword(password, user.password);
 
     // Se senha inválida, retornar erro genérico
@@ -182,7 +185,7 @@ export async function login(
     // Gerar JWT token
     const token = await signJWT({
       userId: user.id,
-      email: user.email,
+      email: user.email ?? '',
     });
 
     // Retornar usuário (sem senha)

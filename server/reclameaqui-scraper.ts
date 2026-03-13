@@ -94,8 +94,17 @@ export class ReclameAquiScraper {
       await this.initialize();
     }
 
-    const page = await this.browser!.newPage();
-    
+    // Abrir página — reinicializa browser se conexão foi perdida
+    let page;
+    try {
+      page = await this.browser!.newPage();
+    } catch (err) {
+      console.warn(`⚠️  Browser fechou inesperadamente. Reinicializando...`);
+      try { await this.close(); } catch {}
+      await this.initialize();
+      page = await this.browser!.newPage();
+    }
+
     try {
       console.log(`📊 Coletando dados de: ${bankSlug}`);
       console.log(`🔗 URL: ${url}`);
@@ -228,7 +237,11 @@ export class ReclameAquiScraper {
 
     } catch (error) {
       console.error(`❌ Erro ao fazer scraping de ${bankSlug}:`, error);
-      await page.close();
+      try { await page.close(); } catch {}
+      // Se a conexão caiu, reseta browser para reinicializar na próxima chamada
+      if (error instanceof Error && error.message.includes('Connection closed')) {
+        this.browser = null;
+      }
       return null;
     }
   }
