@@ -22,7 +22,7 @@ interface UpdateResults {
  * 
  * Executa uma atualização completa de todos os dados:
  * 1. Ingestão de dados do Banco Central (BCB)
- * 2. Recomputação de scores
+ * 2. Limpeza de score legado (modo estrito)
  * 
  * Retorna um relatório completo da operação
  */
@@ -70,38 +70,19 @@ export async function POST(request: Request) {
 
     // ─── PASSO 2: Recomputação de Scores ───────────────────────────────────────
 
-    console.log("\n🎯 [2/2] Recomputação de Scores...\n");
+    console.log("\n🧹 [2/2] Limpeza de Scores Legados...\n");
     const scoresStartTime = Date.now();
 
     let scoresComputed = 0;
     const scoresErrors: string[] = [];
 
     try {
-      const banks = await prisma.bank.findMany();
-      console.log(`   Recomputando scores para ${banks.length} bancos...`);
-
-      for (const bank of banks) {
-        try {
-          // Delete existing scores for this bank to avoid unique constraint violations
-          await prisma.bankScore.deleteMany({
-            where: { bankId: bank.id },
-          });
-
-          // Recompute the score
-          await (
-            await import("@/server/scoring-service")
-          ).computeBankScore(bank.id);
-
-          scoresComputed++;
-          console.log(`   ✓ ${bank.name}`);
-        } catch (error) {
-          const errorMsg = `Erro ao computar score de ${bank.name}: ${error}`;
-          console.log(`   ✗ ${errorMsg}`);
-          scoresErrors.push(errorMsg);
-        }
-      }
+      const deleted = await prisma.bankScore.deleteMany();
+      scoresComputed = 0;
+      console.log(`   ✓ ${deleted.count} score(s) legado(s) removido(s)`);
+      console.log("   ℹ️  Modo estrito IFData ativo: score composto externo desativado");
     } catch (error) {
-      const errorMsg = `Erro geral na recomputação de scores: ${error}`;
+      const errorMsg = `Erro geral na limpeza de scores legados: ${error}`;
       console.log(`   ✗ ${errorMsg}`);
       scoresErrors.push(errorMsg);
     }
@@ -113,8 +94,8 @@ export async function POST(request: Request) {
       durationMs: scoresDuration,
     };
 
-    console.log(`✅ Scores Completo (${scoresDuration}ms)`);
-    console.log(`   • Bancos com scores: ${scoresComputed}`);
+    console.log(`✅ Limpeza de Scores Completa (${scoresDuration}ms)`);
+    console.log(`   • Scores compostos gerados: ${scoresComputed}`);
 
     // ─── Resumo Final ──────────────────────────────────────────────────────────
 
@@ -134,7 +115,7 @@ export async function POST(request: Request) {
     console.log("=".repeat(70));
     console.log(`Tempo total: ${(totalDuration / 1000).toFixed(2)}s`);
     console.log(`• BCB: ${bcbResult.banksProcessed} bancos`);
-    console.log(`• Scores: ${scoresComputed} bancos`);
+    console.log(`• Scores compostos gerados: ${scoresComputed}`);
     console.log("=".repeat(70) + "\n");
 
     return NextResponse.json(results, { status: 200 });

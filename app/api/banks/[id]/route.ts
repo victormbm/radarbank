@@ -44,10 +44,6 @@ export async function GET(
         ],
       },
       include: {
-        scores: {
-          orderBy: { date: "desc" },
-          take: 10,
-        },
         snapshots: {
           orderBy: { date: "desc" },
           take: 10,
@@ -63,24 +59,11 @@ export async function GET(
       return NextResponse.json({ error: "Bank not found" }, { status: 404 });
     }
 
-    const latestScore = bank.scores[0] ?? null;
     const latestSnapshot = bank.snapshots[0] ?? null;
     const latestReputation = bank.reputation[0] ?? null;
-    const fallbackScores = latestSnapshot ? computeFallbackScores(latestSnapshot.date, latestSnapshot) : null;
-    const scores = latestScore
-      ? {
-          totalScore: latestScore.totalScore,
-          capitalScore: latestScore.capitalScore,
-          liquidityScore: latestScore.liquidityScore,
-          profitabilityScore: latestScore.profitabilityScore,
-          creditScore: latestScore.creditScore,
-          reputationScore: latestScore.reputationScore,
-          sentimentScore: latestScore.sentimentScore,
-          marketScore: latestScore.marketScore,
-          status: latestScore.status,
-          date: latestScore.date.toISOString(),
-        }
-      : fallbackScores;
+    const scores = latestSnapshot
+      ? computeFallbackScores(latestSnapshot.date, latestSnapshot)
+      : null;
 
     // Historical snapshots for charts
     const metrics = bank.snapshots.map((s) => ({
@@ -306,12 +289,19 @@ function computeFallbackScores(
     return null;
   }
 
+  const availableDomains = [capitalScore, liquidityScore, profitabilityScore, creditScore]
+    .filter((score): score is number => typeof score === "number").length;
+
+  if (availableDomains < 2) {
+    return null;
+  }
+
   return {
     totalScore: Number(totalScore.toFixed(2)),
-    capitalScore: Number((capitalScore ?? 0).toFixed(2)),
-    liquidityScore: Number((liquidityScore ?? 0).toFixed(2)),
-    profitabilityScore: Number((profitabilityScore ?? 0).toFixed(2)),
-    creditScore: Number((creditScore ?? 0).toFixed(2)),
+    capitalScore: capitalScore !== null ? Number(capitalScore.toFixed(2)) : null,
+    liquidityScore: liquidityScore !== null ? Number(liquidityScore.toFixed(2)) : null,
+    profitabilityScore: profitabilityScore !== null ? Number(profitabilityScore.toFixed(2)) : null,
+    creditScore: creditScore !== null ? Number(creditScore.toFixed(2)) : null,
     reputationScore: null,
     sentimentScore: null,
     marketScore: null,

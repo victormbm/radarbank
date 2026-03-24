@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { getBankVisual } from "@/lib/brazilian-banks";
 
 // Sempre buscar dados frescos do banco — sem cache em nenhuma camada
 export const dynamic = 'force-dynamic';
@@ -24,12 +25,6 @@ export async function GET(request: Request) {
         name: 'asc'
       },
       include: {
-        scores: {
-          orderBy: {
-            date: 'desc'
-          },
-          take: 2 // Último e penúltimo para calcular tendência
-        },
         snapshots: {
           orderBy: {
             date: 'desc'
@@ -44,14 +39,27 @@ export async function GET(request: Request) {
 
     // Transformar para o formato esperado pela interface
     const formattedBanks = banks.map(bank => {
-      const latestScore = bank.scores[0] ?? null;
-      const previousScore = bank.scores[1] ?? null;
       const latestSnapshot = bank.snapshots[0];
       const previousSnapshot = bank.snapshots[1];
 
+      const score = calculateBCBSafetyScore({
+        basilRatio: latestSnapshot?.basilRatio,
+        lcr: latestSnapshot?.lcr,
+        quickLiquidity: latestSnapshot?.quickLiquidity,
+        roe: latestSnapshot?.roe,
+        nplRatio: latestSnapshot?.nplRatio,
+      });
+      const previousScore = calculateBCBSafetyScore({
+        basilRatio: previousSnapshot?.basilRatio,
+        lcr: previousSnapshot?.lcr,
+        quickLiquidity: previousSnapshot?.quickLiquidity,
+        roe: previousSnapshot?.roe,
+        nplRatio: previousSnapshot?.nplRatio,
+      });
+
       // Calcular tendências
-      const scoreTrend = latestScore && previousScore 
-        ? latestScore.totalScore - previousScore.totalScore 
+      const scoreTrend = typeof score === 'number' && typeof previousScore === 'number'
+        ? score - previousScore
         : null;
 
       const basileaTrend = latestSnapshot?.basilRatio && previousSnapshot?.basilRatio
@@ -78,19 +86,19 @@ export async function GET(request: Request) {
         country: bank.country,
         segment: bank.segment,
         
-        // Score
-        status: latestScore?.status ?? 'unknown',
-        score: latestScore?.totalScore ?? null,
+        // Score tecnico estrito usando apenas dados do BCB
+        status: scoreStatusFromTotal(score),
+        score,
         scoreTrend,
         
-        // Breakdown do score
-        capitalScore: latestScore?.capitalScore ?? null,
-        liquidityScore: latestScore?.liquidityScore ?? null,
-        profitabilityScore: latestScore?.profitabilityScore ?? null,
-        creditScore: latestScore?.creditScore ?? null,
-        reputationScore: latestScore?.reputationScore ?? null,
-        sentimentScore: latestScore?.sentimentScore ?? null,
-        marketScore: latestScore?.marketScore ?? null,
+        // Breakdown permanece indisponivel na listagem estrita
+        capitalScore: null,
+        liquidityScore: null,
+        profitabilityScore: null,
+        creditScore: null,
+        reputationScore: null,
+        sentimentScore: null,
+        marketScore: null,
         
         // Métricas principais
         basilRatio: latestSnapshot?.basilRatio,
@@ -104,13 +112,7 @@ export async function GET(request: Request) {
         nplTrend,
 
         // Score técnico de segurança usando apenas dados BCB
-        bcbSafetyScore: calculateBCBSafetyScore({
-          basilRatio: latestSnapshot?.basilRatio,
-          lcr: latestSnapshot?.lcr,
-          quickLiquidity: latestSnapshot?.quickLiquidity,
-          roe: latestSnapshot?.roe,
-          nplRatio: latestSnapshot?.nplRatio,
-        }),
+        bcbSafetyScore: score,
         bcbDataCoverage: getBCBDataCoverage({
           basilRatio: latestSnapshot?.basilRatio,
           lcr: latestSnapshot?.lcr,
@@ -175,36 +177,54 @@ function calculateBCBSafetyScore(metrics: {
   roe?: number | null;
   nplRatio?: number | null;
 }): number | null {
-  const components: number[] = [];
+  const weightedComponents: Array<{ score: number; weight: number }> = [];
 
   if (typeof metrics.basilRatio === 'number') {
     const basileiaScore = clamp(((metrics.basilRatio - 11) / (20 - 11)) * 100, 0, 100);
-    components.push(basileiaScore * 0.35);
+    weightedComponents.push({ score: basileiaScore, weight: 0.35 });
   }
 
   if (typeof metrics.lcr === 'number') {
     const lcrScore = clamp(((metrics.lcr - 100) / (220 - 100)) * 100, 0, 100);
-    components.push(lcrScore * 0.25);
+    weightedComponents.push({ score: lcrScore, weight: 0.25 });
   } else if (typeof metrics.quickLiquidity === 'number') {
     const quickLiquidityScore = clamp(((metrics.quickLiquidity - 20) / (100 - 20)) * 100, 0, 100);
-    components.push(quickLiquidityScore * 0.25);
+    weightedComponents.push({ score: quickLiquidityScore, weight: 0.25 });
   }
 
   if (typeof metrics.roe === 'number') {
     const roeScore = clamp((metrics.roe / 25) * 100, 0, 100);
-    components.push(roeScore * 0.2);
+    weightedComponents.push({ score: roeScore, weight: 0.2 });
   }
 
   if (typeof metrics.nplRatio === 'number') {
     const nplScore = clamp(((8 - metrics.nplRatio) / (8 - 1)) * 100, 0, 100);
-    components.push(nplScore * 0.2);
+    weightedComponents.push({ score: nplScore, weight: 0.2 });
   }
 
-  if (components.length < 2) {
+  if (weightedComponents.length < 2) {
     return null;
   }
 
-  return Number(components.reduce((acc, current) => acc + current, 0).toFixed(2));
+  const weightedSum = weightedComponents.reduce((acc, current) => acc + current.score * current.weight, 0);
+  const totalWeight = weightedComponents.reduce((acc, current) => acc + current.weight, 0);
+
+  if (totalWeight <= 0) {
+    return null;
+  }
+
+  return Number((weightedSum / totalWeight).toFixed(2));
+}
+
+function scoreStatusFromTotal(totalScore: number | null): 'healthy' | 'watch' | 'risk' | 'critical' | 'unknown' {
+  if (typeof totalScore !== 'number') {
+    return 'unknown';
+  }
+
+  if (totalScore >= 80) return 'healthy';
+  if (totalScore >= 65) return 'watch';
+  if (totalScore >= 50) return 'risk';
+  return 'critical';
 }
 
 function getBCBDataCoverage(metrics: {
@@ -277,23 +297,54 @@ function calculateSegmentStats(banks: any[]) {
  * Consolida bancos duplicados, priorizando registros com CNPJ completo
  */
 function consolidateDuplicateBanks(banks: any[]) {
-  const cnpjMap = new Map<string, any>();
+  const uniqueMap = new Map<string, any>();
 
   banks.forEach(bank => {
-    // Normalizar CNPJ (pegar apenas os 8 primeiros dígitos - base CNPJ)
+    // Tentar deduplicar primeiro por identidade visual/canonica do banco.
+    const visual = getBankVisual({ slug: bank.slug, name: bank.name });
+    if (visual?.slug) {
+      const key = `visual:${visual.slug}`;
+      const existing = uniqueMap.get(key);
+      if (!existing || getDataCompleteness(bank) > getDataCompleteness(existing)) {
+        uniqueMap.set(key, bank);
+      }
+      return;
+    }
+
+    // Fallback por base de CNPJ (8 primeiros dígitos)
     const baseCnpj = bank.cnpj?.substring(0, 8);
-    
-    if (!baseCnpj) return;
+    const key = baseCnpj ? `cnpj:${baseCnpj}` : `slug:${normalizeKey(bank.slug || bank.name || bank.id)}`;
 
-    const existing = cnpjMap.get(baseCnpj);
-
-    // Se não existe ou o atual tem CNPJ mais completo (14 dígitos), usar este
-    if (!existing || (bank.cnpj?.length === 14 && existing.cnpj?.length !== 14)) {
-      cnpjMap.set(baseCnpj, bank);
+    const existing = uniqueMap.get(key);
+    if (!existing || getDataCompleteness(bank) > getDataCompleteness(existing)) {
+      uniqueMap.set(key, bank);
     }
   });
 
-  return Array.from(cnpjMap.values());
+  return Array.from(uniqueMap.values());
+}
+
+function getDataCompleteness(bank: any) {
+  const score = [
+    bank.basilRatio,
+    bank.lcr,
+    bank.quickLiquidity,
+    bank.roe,
+    bank.nplRatio,
+    bank.totalAssets,
+    bank.equity,
+  ].filter((value) => typeof value === 'number').length;
+
+  const hasFullCnpj = typeof bank.cnpj === 'string' && bank.cnpj.length === 14 ? 1 : 0;
+  return score + hasFullCnpj;
+}
+
+function normalizeKey(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
 }
 
 /**

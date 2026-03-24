@@ -68,10 +68,10 @@ export const bankDetailSnapshotApiSchema = z.object({
 
 export const bankDetailScoresApiSchema = z.object({
   totalScore: finiteNumber,
-  capitalScore: finiteNumber,
-  liquidityScore: finiteNumber,
-  profitabilityScore: finiteNumber,
-  creditScore: finiteNumber,
+  capitalScore: nullableFiniteNumber,
+  liquidityScore: nullableFiniteNumber,
+  profitabilityScore: nullableFiniteNumber,
+  creditScore: nullableFiniteNumber,
   reputationScore: nullableFiniteNumber,
   sentimentScore: nullableFiniteNumber,
   marketScore: nullableFiniteNumber,

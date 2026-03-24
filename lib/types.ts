@@ -30,10 +30,10 @@ export interface BankDetailSnapshot {
 /** Computed scores from the latest BankScore record */
 export interface BankDetailScores {
   totalScore: number;
-  capitalScore: number;
-  liquidityScore: number;
-  profitabilityScore: number;
-  creditScore: number;
+  capitalScore: number | null;
+  liquidityScore: number | null;
+  profitabilityScore: number | null;
+  creditScore: number | null;
   reputationScore: number | null;
   sentimentScore: number | null;
   marketScore: number | null;
