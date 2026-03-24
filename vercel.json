@@ -13,11 +13,7 @@
   "crons": [
     {
       "path": "/api/ingest/cron",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/reputation/cron",
-      "schedule": "0 10,22 * * *"
+      "schedule": "0 */6 * * *"
     }
   ]
 }

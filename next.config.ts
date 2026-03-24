@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Standalone output bundles only the necessary files for production.
+  // Required for the Docker/Cloud Run deployment — produces .next/standalone.
+  output: "standalone",
+
   eslint: {
-    // Permitir builds de produção mesmo com erros de ESLint
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Manter verificação de tipos rigorosa
     ignoreBuildErrors: false,
   },
 };

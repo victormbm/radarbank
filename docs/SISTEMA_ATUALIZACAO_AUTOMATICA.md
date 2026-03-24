@@ -128,16 +128,34 @@ Deployments → Seu projeto → Cron Jobs
   - Q3 (Jul-Set): Publicado ~15 Outubro
   - Q4 (Out-Dez): Publicado ~15 Janeiro
 
-### Nossa Frequência
-- **Check**: Diário às 2h AM (horário de Brasília)
-- **Ingestão**: Apenas quando há novos dados
-- **Cache**: 24h para dados não alterados
+### Nossa Frequência (Produção)
+- **Check**: A cada 6 horas
+- **Ingestão**: Apenas quando há nova data-base oficial
+- **Recompute**: Imediato após ingestão concluída
+- **Auditoria**: A cada 24 horas + após ingestão
+- **Cache API**: 10 minutos
+- **Refresh UI**: 5 minutos
 
-### Por que Diário?
-✅ Detectar novos dados imediatamente  
-✅ Custo zero (API BCB gratuita)  
-✅ Skip inteligente se não houver dados novos  
-✅ Usuários percebem "tempo real"
+### Por que 6 em 6 horas?
+✅ Detecta rapidamente novas publicações oficiais
+✅ Evita custo/execuções desnecessárias
+✅ Mantém sensação de atualização contínua para o usuário
+✅ Reduz risco operacional comparado a ciclos muito agressivos
+
+## 🧭 Política Oficial de Atualização (SLA de Dados)
+
+Esta política pode ser exibida na aplicação para transparência:
+
+1. Fonte: Banco Central do Brasil (IF.data API).
+2. Modelo de publicação: trimestral, com atraso operacional do provedor.
+3. Checagem automática: a cada 6 horas.
+4. Atualização real: somente quando houver nova base oficial.
+5. Auditoria de consistência: diária e após ingestão.
+6. Classificação de frescor:
+- `fresh`: até 30 dias da última referência.
+- `current`: 31 a 120 dias.
+- `stale`: 121 a 180 dias.
+- `outdated`: acima de 180 dias.
 
 ## 🔍 Detecção de Mudanças Significativas
 

@@ -11,6 +11,7 @@
 import { prisma } from "@/lib/db";
 import { bcbDataService, BANK_CNPJ_MAP, type BCBBankData } from "./bcb-data-service";
 import { METRICS_CONFIG } from "@/lib/metrics-config";
+import { bcbAPI } from "./bcb-api-service";
 
 export interface IngestionResult {
   success: boolean;
@@ -42,16 +43,19 @@ export class DataIngestionService {
 
     try {
       console.log('[INGESTÃO] Iniciando coleta de dados do BCB...');
+
+      // Sempre persistir snapshots com a data-base oficial da publicação IFData.
+      const effectiveReferenceDate = referenceDate || bcbAPI.getLatestAvailableQuarter().date;
       
       // 1. Coletar dados do BCB
-      const bcbData = await bcbDataService.fetchConsolidatedData(referenceDate);
+      const bcbData = await bcbDataService.fetchConsolidatedData(effectiveReferenceDate);
       
       console.log(`[INGESTÃO] Coletados dados de ${bcbData.size} bancos`);
 
       // 2. Processar cada banco
       for (const [cnpj, bankData] of bcbData.entries()) {
         try {
-          await this.processBankData(cnpj, bankData, referenceDate);
+          await this.processBankData(cnpj, bankData, effectiveReferenceDate);
           banksProcessed++;
           metricsCollected += this.countMetrics(bankData);
         } catch (error) {
@@ -112,21 +116,25 @@ export class DataIngestionService {
    */
   private async processBankData(cnpj: string, bankData: BCBBankData, referenceDate?: string) {
     const date = referenceDate ? new Date(referenceDate) : new Date();
+    const normalizedCnpj = cnpj.replace(/\D/g, '');
+    const slug = this.getSlugFromCNPJ(normalizedCnpj) || `bank-${normalizedCnpj}`;
 
     // 1. Encontrar ou criar banco
-    let bank = await prisma.bank.findUnique({
-      where: { cnpj },
+    let bank = await prisma.bank.findFirst({
+      where: {
+        OR: [
+          { cnpj: normalizedCnpj },
+          { slug },
+        ],
+      },
     });
 
     if (!bank) {
-      // Encontrar slug pelo CNPJ
-      const slug = this.getSlugFromCNPJ(cnpj);
-      
       bank = await prisma.bank.create({
         data: {
           name: bankData.nome,
-          slug: slug || `bank-${cnpj}`,
-          cnpj,
+          slug,
+          cnpj: normalizedCnpj,
           type: this.inferBankType(bankData.nome),
           country: 'BR',
           segment: bankData.segmento || 'S4',
@@ -134,6 +142,15 @@ export class DataIngestionService {
       });
       
       console.log(`[INGESTÃO] Novo banco criado: ${bank.name}`);
+    } else if (bank.cnpj !== normalizedCnpj || bank.name !== bankData.nome) {
+      bank = await prisma.bank.update({
+        where: { id: bank.id },
+        data: {
+          cnpj: normalizedCnpj,
+          name: bankData.nome,
+          segment: bankData.segmento || bank.segment || 'S4',
+        },
+      });
     }
 
     // 2. Criar ou atualizar snapshot com todos os dados
@@ -146,78 +163,78 @@ export class DataIngestionService {
       },
       update: {
         // Capital
-        basilRatio: bankData.basileia,
-        tier1Ratio: bankData.tier1,
-        cet1Ratio: bankData.cet1,
-        leverageRatio: bankData.alavancagem,
+        basilRatio: bankData.basileia ?? null,
+        tier1Ratio: bankData.tier1 ?? null,
+        cet1Ratio: bankData.cet1 ?? null,
+        leverageRatio: bankData.alavancagem ?? null,
         
         // Liquidez
-        lcr: bankData.lcr,
-        nsfr: bankData.nsfr,
-        quickLiquidity: bankData.liquidez,
-        loanToDeposit: bankData.loanToDeposit,
+        lcr: bankData.lcr ?? null,
+        nsfr: bankData.nsfr ?? null,
+        quickLiquidity: bankData.liquidez ?? null,
+        loanToDeposit: bankData.loanToDeposit ?? null,
         
         // Rentabilidade
-        roe: bankData.roe,
-        roa: bankData.roa,
-        nim: bankData.nim,
-        costToIncome: bankData.costToIncome,
+        roe: bankData.roe ?? null,
+        roa: bankData.roa ?? null,
+        nim: bankData.nim ?? null,
+        costToIncome: bankData.costToIncome ?? null,
         
         // Qualidade de Crédito
-        nplRatio: bankData.inadimplencia,
-        coverageRatio: bankData.coverageRatio,
-        writeOffRate: bankData.writeOffRate,
-        creditQuality: bankData.creditQuality,
+        nplRatio: bankData.inadimplencia ?? null,
+        coverageRatio: bankData.coverageRatio ?? null,
+        writeOffRate: bankData.writeOffRate ?? null,
+        creditQuality: bankData.creditQuality ?? null,
         
         // Tamanho
-        totalAssets: bankData.ativoTotal,
-        equity: bankData.patrimonioLiquido,
-        totalDeposits: bankData.totalDeposits,
-        loanPortfolio: bankData.loanPortfolio,
+        totalAssets: bankData.ativoTotal ?? null,
+        equity: bankData.patrimonioLiquido ?? null,
+        totalDeposits: bankData.totalDeposits ?? null,
+        loanPortfolio: bankData.loanPortfolio ?? null,
         
         // Crescimento
-        assetGrowth: bankData.assetGrowth,
-        loanGrowth: bankData.loanGrowth,
-        depositGrowth: bankData.depositGrowth,
+        assetGrowth: bankData.assetGrowth ?? null,
+        loanGrowth: bankData.loanGrowth ?? null,
+        depositGrowth: bankData.depositGrowth ?? null,
       },
       create: {
         bankId: bank.id,
         date,
         
         // Capital
-        basilRatio: bankData.basileia,
-        tier1Ratio: bankData.tier1,
-        cet1Ratio: bankData.cet1,
-        leverageRatio: bankData.alavancagem,
+        basilRatio: bankData.basileia ?? null,
+        tier1Ratio: bankData.tier1 ?? null,
+        cet1Ratio: bankData.cet1 ?? null,
+        leverageRatio: bankData.alavancagem ?? null,
         
         // Liquidez
-        lcr: bankData.lcr,
-        nsfr: bankData.nsfr,
-        quickLiquidity: bankData.liquidez,
-        loanToDeposit: bankData.loanToDeposit,
+        lcr: bankData.lcr ?? null,
+        nsfr: bankData.nsfr ?? null,
+        quickLiquidity: bankData.liquidez ?? null,
+        loanToDeposit: bankData.loanToDeposit ?? null,
         
         // Rentabilidade
-        roe: bankData.roe,
-        roa: bankData.roa,
-        nim: bankData.nim,
-        costToIncome: bankData.costToIncome,
+        roe: bankData.roe ?? null,
+        roa: bankData.roa ?? null,
+        nim: bankData.nim ?? null,
+        costToIncome: bankData.costToIncome ?? null,
         
         // Qualidade de Crédito
-        nplRatio: bankData.inadimplencia,
-        coverageRatio: bankData.coverageRatio,
-        writeOffRate: bankData.writeOffRate,
-        creditQuality: bankData.creditQuality,
+        nplRatio: bankData.inadimplencia ?? null,
+        coverageRatio: bankData.coverageRatio ?? null,
+        writeOffRate: bankData.writeOffRate ?? null,
+        creditQuality: bankData.creditQuality ?? null,
         
         // Tamanho
-        totalAssets: bankData.ativoTotal,
-        equity: bankData.patrimonioLiquido,
-        totalDeposits: bankData.totalDeposits,
-        loanPortfolio: bankData.loanPortfolio,
+        totalAssets: bankData.ativoTotal ?? null,
+        equity: bankData.patrimonioLiquido ?? null,
+        totalDeposits: bankData.totalDeposits ?? null,
+        loanPortfolio: bankData.loanPortfolio ?? null,
         
         // Crescimento
-        assetGrowth: bankData.assetGrowth,
-        loanGrowth: bankData.loanGrowth,
-        depositGrowth: bankData.depositGrowth,
+        assetGrowth: bankData.assetGrowth ?? null,
+        loanGrowth: bankData.loanGrowth ?? null,
+        depositGrowth: bankData.depositGrowth ?? null,
       },
     });
 

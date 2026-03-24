@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { dataIngestionService } from "@/server/data-ingestion-service";
+import { requireAdminAccess } from "@/lib/admin-auth";
 
 /**
  * POST /api/ingest/init
  * 
  * Inicializa métricas no banco de dados
  */
-export async function POST() {
+export async function POST(request: Request) {
+  const auth = requireAdminAccess(request);
+  if (!auth.allowed) {
+    return auth.response;
+  }
+
   try {
     console.log('[API] Inicializando métricas...');
     

@@ -1,103 +1,197 @@
-# Status do Projeto - 23 de Fevereiro de 2026
+# Status do Projeto - 17 de Março de 2026
 
-## 🎯 O Que Foi Feito Hoje
+## 🎯 Implementação Zero-Scraping: API-Only Mode Ativado
 
-### 1. Implementação do Diferencial Competitivo (BCB + Reclame Aqui)
-✅ **Criado enfoque visual em todo o site** para destacar o diferencial único:
-- Dashboard com banner de destaque "🏆 EXCLUSIVO: Únicos a combinar métricas BCB + Reputação"
-- Página de pricing com seção "Por que Somos Diferentes?"
-- README atualizado com comparação competitiva
-- Componente `ReputationBadge` criado (ainda não integrado)
-- Pitch deck completo para investors (docs/PITCH_DECK.md)
+### Status Principal: ✅ ZERO SCRAPING VERIFICADO
+**Data da Última Atualização**: 17 de março de 2026  
+**Modo Atual**: API-ONLY (sem coleta de dados externos)  
+**Fonte Oficial**: BCB IFData OData v1 (https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/)
 
-### 2. Correção de Erros de Compilação
-✅ **Build fixado completamente** - todos os erros TypeScript resolvidos:
-- Migração de campos no schema Prisma propagada
-- Função `recomputeAllScores()` adaptada (retorna array em vez de objeto)
-- Campos renomeados em múltiplos arquivos (`referenceDate` → `date`, `basileia` → `basilRatio`, etc.)
-- Serviço de scoring reescrito para usar `scoring-v2.ts`
-- Next.js 15 compatibility fixes (`await cookies()`)
+### 1. Eliminação Completa de Scraping
+✅ **Todas as vetores de coleta de dados removidas ou bloqueadas**:
+- `app/api/reputation/cron/route.ts` → HTTP 410 Gone (modo api-only)
+- `app/api/reputation/ingest/route.ts` → HTTP 410 Gone (bloqueado)
+- `scripts/run-reputation-real.bat` → [ZERO-SCRAPING] desativado
+- `scripts/run-reputation-cron.bat` → [ZERO-SCRAPING] desativado
+- `scripts/setup-reputation-*.ps1` → [ZERO-SCRAPING] bloqueado
+- `server/reclameaqui-service.ts` → Retorna null com warning log
+- `vercel.json` → Removido `/api/reputation/cron` da configuração
 
-## ✅ Status Atual
+### 2. Hardening de API Oficial (BCB)
+✅ **Sistema de verificação estrita implementado**:
+- Health-check adicionado: `isCadastroAvailable()` em bcb-api-service.ts
+- Fail-fast behavior quando IfDataCadastro indisponível
+- Auditoria automática: `scripts/audit-bcb-ifdata.ts` valida dados vs. oficial
+- Mensagens explícitas "BLOQUEADO" em logs quando API falha
+- Exit codes distintos: 1 (failed audit) vs 2 (API unavailable)
 
-### Build & Servidor
-- **Build Status**: ✅ SUCESSO (`npm run build` passa sem erros)
-- **Dev Server**: ✅ Rodando na porta **3001** (3000 ocupada)
+## ⚠️ Status Atual da Coleta
+
+### Bloqueio Atual: IfDataCadastro (HTTP 500)
+🔴 **API oficial de cadastro de instituições indisponível**:
+- Endpoint: `https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/IfDataCadastro`
+- Status: HTTP 500 (erro no servidor do BCB)
+- Impacto: Sem mapeamento oficial CNPJ↔CodInst, não há auditoria verificável
+- Solução: Aguardar BCB restaurar endpoint; quando voltar, audit passará automaticamente
+
+### Endpoints Verificados
+```
+✅ IfDataValores       → HTTP 200 (métricas funcionando)
+✅ ListaDeRelatorio    → HTTP 200 (estrutura funcionando)  
+❌ IfDataCadastro      → HTTP 500 (cadastro de instituições)
+```
+
+### Campos de Dados Mapeados (Prontos para Ingestão)
+Quando cadastro voltar, os seguintes campos serão coletados e auditados:
+- `basilRatio` → Índice da Basileia
+- `tier1Ratio` → Tier 1 Capital Ratio
+- `cet1Ratio` → CET1 Capital Ratio
+- `totalAssets` → Ativo Total
+- `equity` → Patrimônio Líquido
+- `loanPortfolio` → Carteira de Empréstimos
+
+## ✅ Build & Infraestrutura
+
+### Build Status
+- **Build**: ✅ SUCESSO (`npm run build` sem erros)
+- **Dev Server**: ✅ Pronto (comando: `npm run dev`)
 - **TypeScript**: ✅ Sem erros de compilação
-- **ESLint**: ⚠️ Ignorado durante builds (`ignoreDuringBuilds: true`)
+- **API Routes**: ✅ Funcionando (com bloqueios de scraping ativados)
 
-### Banco de Dados
-- **Prisma Schema**: ✅ Atualizado com sistema de reputação
-- **Prisma Client**: ✅ Gerado (v5.22.0)
-- **Migrations**: ⚠️ Não executadas (só schema atualizado)
+## � Próximos Passos (Roadmap)
 
-### Arquivos Principais Modificados Hoje
-```
-✏️ app/dashboard/page.tsx          - Banner de diferencial
-✏️ app/pricing/page.tsx            - Seção competitiva
-✏️ README.md                        - Vantagem competitiva
-✏️ components/reputation-badge.tsx  - NOVO componente
-✏️ docs/PITCH_DECK.md              - NOVO documento
-✏️ app/api/ingest/cron/route.ts    - Fix scoring
-✏️ lib/update-tracker.ts           - Fix field names
-✏️ server/scoring-service.ts       - Reescrito para scoring-v2
-✏️ server/ingestion-service.ts     - Fix Metric.category
-✏️ lib/auth-db.ts                  - Fix cookies() await
-```
+### PASSO 1: Monitorar Recuperação da API (PRIORIDADE CRÍTICA)
+**Status**: ⏳ Aguardando  
+**Timeline**: Next 24-72 horas  
+**O quê fazer**:
+1. Verificar diariamente se IfDataCadastro voltou ao ar:
+   ```bash
+   npx tsx scripts/probe-ifdata-resolution.ts
+   ```
+2. Quando HTTP 500 mudar para 200:
+   - Sistema será desbloqueado automaticamente
+   - Próximo agendamento CRON executará audit
+   - Métricas começarão a popular no banco de dados
 
-## 🚀 Como Continuar Amanhã
-
-### Passo 1: Verificar o Servidor
+**Ação manual (se necessário)**:
 ```bash
-# Servidor deve estar rodando na porta 3001
-# Se não estiver, rode:
-npm run dev
-
-# Acesse para testar:
-http://localhost:3001/dashboard
-http://localhost:3001/pricing
+# Para forçar verificação e auditoria assim que API recuperar:
+npm run audit-bcb-ifdata
 ```
 
-### Passo 2: Testar Visualmente
-- [ ] Dashboard mostra banner "🏆 EXCLUSIVO"
-- [ ] Pricing tem seção "Por que Somos Diferentes?"
-- [ ] Cards mostram "60% BCB + 40% Experiência"
-- [ ] Todas as páginas carregam sem 404
+### PASSO 2: Implementar Health-Check Automático (INDEPENDENTE)
+**Status**: Pronto para implementação  
+**Timeline**: Hoje / Próximas horas  
+**O quê fazer**:
+1. Criar novo CRON job em `vercel.json`:
+   ```json
+   {
+     "path": "/api/health/ifdata",
+     "schedule": "0 */6 * * *"
+   }
+   ```
+2. Implementar rota: `app/api/health/ifdata/route.ts`
+   - Testa IfDataCadastro a cada 6 horas
+   - Registra timestamp da última falha/sucesso
+   - Opcionalmente: Envia alerta se API voltar ao ar
 
-### Passo 3: Próximas Implementações Sugeridas
+### PASSO 3: Re-Executar Auditoria Completa (PÓS-RECUPERAÇÃO)
+**Status**: Bloqueado até IfDataCadastro ✅  
+**Timeline**: Assim que API voltar  
+**O quê fazer**:
+1. Auditoria detectará automaticamente via CRON:
+   ```bash
+   # Agendado a cada 6 horas, vai verificar
+   /api/ingest/cron
+   ```
+2. Resultado esperado:
+   ```
+   ✅ PASS: Todos os 14 bancos auditados
+   ✅ Métricas: Basileia, Tier1, CET1 verificadas
+   ✅ Dados publicados com timestamp oficial
+   ```
 
-#### A. Integrar Dados de Reputação (PRIORIDADE ALTA)
-```typescript
-// Já existe: components/reputation-badge.tsx
-// TODO: Integrar no banks-table.tsx
-// TODO: Conectar com dados reais do Reclame Aqui
-```
+### PASSO 4: Habilitar Ingestão de Dados (PÓS-AUDITORIA)
+**Status**: Código pronto, aguardando audit passar  
+**Timeline**: Imediato após auditoria  
+**O quê fazer**:
+- Dashboard será automaticamente populado
+- Métricas exibirão valores reais dos 14 bancos monitorados
+- Histórico será mantido (triannual BCB releases)
 
-**Arquivos para editar:**
-- `components/banks-table.tsx` - Adicionar coluna de reputação
-- `app/banks/[id]/page.tsx` - Mostrar ReputationCard
-- `lib/reclame-aqui-api.ts` - Criar API wrapper
+### PASSO 5: Display de Métricas Basileia (INTEGRAÇÃO UI)
+**Status**: UI pronta, aguardando dados  
+**Timeline**: Quando dados forem ingeridos  
+**O quê fazer**:
+1. Componentes já existem em `components/`:
+   - `bank-metrics.tsx` - Exibe índices
+   - `score-breakdown.tsx` - Detalha Basileia
+   - `metrics-chart.tsx` - Trend de evolução
+2. Dashboard (`app/dashboard/page.tsx`) mostrará:
+   - Basileia do sistema financeiro
+   - Ranking de bancos mais capitalizados
+   - Tendências trimestrais
 
-#### B. Migração do Banco de Dados
+## 🔍 Como Verificar Status
+
+### Testar API Imediatamente
 ```bash
-# Criar migration para o novo schema
-npx prisma migrate dev --name add_reputation_system
+# Verificar se IfDataCadastro responsivo
+curl -s "https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata/IfDataCadastro(AnoMes=202509)?\$format=json&\$top=1" | head -20
 
-# Rodar seed para popular dados
-npm run seed
+# Esperado quando ATIVO: {"value": [...]}
+# Atual quando BLOQUEADO: {"error": {...}}
 ```
 
-#### C. Implementar Scraping Reclame Aqui
-```typescript
-// Arquivo: server/reclame-aqui-service.ts (NÃO EXISTE AINDA)
-// TODO: Ver app/api/reputation/ingest/route.ts como referência
+### Rodar Auditoria Localmente
+```bash
+# Para verificar bloqueio atual:
+npx tsx scripts/audit-bcb-ifdata.ts
+
+# Output esperado (while API down):
+# BLOQUEADO: auditoria estrita indisponivel porque a API oficial de cadastro nao respondeu.
+# Detalhe: IfDataCadastro indisponivel para AnoMes=202509 (HTTP 500 no endpoint oficial)
+# Acao: aguardar normalizacao do endpoint IfDataCadastro e executar novamente.
 ```
 
-#### D. CRON Jobs para Atualização Automática
-```typescript
-// Arquivo: app/api/ingest/cron/route.ts (JÁ EXISTE)
-// Arquivo: app/api/reputation/cron/route.ts (JÁ EXISTE)
-// TODO: Configurar Vercel Cron ou similar
+### Verificar Zero-Scraping
+```bash
+# Testar que reputation routes retornam 410
+curl -s http://localhost:3001/api/reputation/cron
+# {"success": false, "mode": "api-only", ...} + HTTP 410
+
+curl -s http://localhost:3001/api/reputation/ingest  
+# {"success": false, "mode": "api-only", ...} + HTTP 410
+```
+
+## 📊 Checklist de Validação
+
+- [x] Zero scraping verificado (100% API official)
+- [x] Endpoints de reputação retornam 410 Gone
+- [x] Scripts de scraping desativados
+- [x] Health checks implementados
+- [x] Audit script testado e validado
+- [ ] IfDataCadastro recuperado (aguardando BCB)
+- [ ] Auditoria passou com sucesso
+- [ ] Métricas populadas no banco de dados
+- [ ] Dashboard exibindo Basileia corretamente
+- [ ] Data histórica sincronizada (últimas 5 releases)
+
+## 🎯 Mandato do Projeto
+
+**Citação do Usuário**:
+> "quero 0 scrapping, quero que use a api... quero sim, para ter os dados perfeitos que mostro na minha aplicação, bazileira e etc!"
+
+**Interpretação**:
+1. ✅ Zero scraping = implementado (todas vetores bloqueadas)
+2. ✅ API-only = implementado (BCB IFData é única fonte)
+3. ⏳ Dados perfeitos = aguardando IfDataCadastro para auditoria
+4. ⏳ Exibir Basileia = pronto para exibir quando dados chegarem
+
+---
+
+**Status Geral**: 🟡 Em Espera (awaiting official API recovery)  
+**Última Verificação**: 17 de março de 2026
 ```
 
 ## 📋 Comandos Importantes

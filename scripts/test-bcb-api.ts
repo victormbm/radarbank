@@ -27,18 +27,18 @@ async function testBCBAPI() {
     console.log(`   📊 Trimestre: Q${latestQuarter.quarter}/${latestQuarter.year}`);
     console.log(`   ✓  Disponível desde: ${latestQuarter.availableAfter.toLocaleDateString('pt-BR')}\n`);
 
-    // 3. Buscar dados de um banco específico (Nubank como teste)
-    console.log('3️⃣  Testando busca de banco específico (Nubank)...');
-    const nubankCNPJ = '18236120000158';
-    const nubankData = await bcbAPI.fetchInstitutionData(nubankCNPJ, latestQuarter.date);
-    
+    // 3. Buscar dados verificados de um banco específico (Nubank como teste)
+    console.log('3️⃣  Testando coleta verificada de banco específico (Nubank)...');
+    const banksForQuarter = await bcbAPI.fetchAllBanksData(latestQuarter.date);
+    const nubankData = banksForQuarter.find((bank) => bank.cnpj === '18236120000158');
+
     if (nubankData) {
-      console.log('   ✅ Dados encontrados!');
-      console.log(`   🏦 Nome: ${nubankData.NomeInstituicao}`);
-      console.log(`   📊 Basileia: ${nubankData.IndiceBasileia ?? 'N/A'}%`);
-      console.log(`   💰 Patrimônio: R$ ${((nubankData.PatrimonioLiquido ?? 0) / 1e9).toFixed(2)} bilhões`);
+      console.log('   ✅ Dados verificados encontrados!');
+      console.log(`   🏦 Nome: ${nubankData.nome}`);
+      console.log(`   📊 Basileia: ${nubankData.basileia ?? 'N/A'}%`);
+      console.log(`   💰 Patrimônio: R$ ${((nubankData.patrimonioLiquido ?? 0) / 1e9).toFixed(2)} bilhões`);
     } else {
-      console.warn('   ⚠️  Dados não disponíveis (pode ser que o trimestre ainda não esteja publicado)');
+      console.warn('   ⚠️  Banco sem mapeamento IFData verificado nesta coleta');
     }
     console.log();
 

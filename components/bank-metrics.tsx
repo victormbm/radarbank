@@ -24,11 +24,11 @@ const STATUS_DISPLAY: Record<
   string,
   { label: string; color: string; bgColor: string; icon: typeof CheckCircle2 }
 > = {
-  healthy:  { label: "Excelente", color: "text-green-600",  bgColor: "bg-green-50",  icon: CheckCircle2 },
-  watch:    { label: "Atenção",   color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
-  warning:  { label: "Atenção",   color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
-  risk:     { label: "Risco",     color: "text-orange-600", bgColor: "bg-orange-50", icon: AlertCircle },
-  critical: { label: "Crítico",   color: "text-red-600",    bgColor: "bg-red-50",    icon: TrendingDown },
+  healthy:  { label: "Faixa A", color: "text-green-600",  bgColor: "bg-green-50",  icon: CheckCircle2 },
+  watch:    { label: "Faixa B", color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
+  warning:  { label: "Faixa B", color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
+  risk:     { label: "Faixa C", color: "text-orange-600", bgColor: "bg-orange-50", icon: AlertCircle },
+  critical: { label: "Faixa D", color: "text-red-600",    bgColor: "bg-red-50",    icon: TrendingDown },
 };
 
 const DEFAULT_STATUS = {
@@ -113,7 +113,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
                   <StatusIcon className={cn("h-5 w-5 sm:h-6 sm:w-6", statusDisplay.color)} />
                 </div>
                 <div>
-                  <CardDescription className="text-xs sm:text-sm">Saúde Geral do Banco</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Nota Técnica BCB (0 a 100)</CardDescription>
                   <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold">
                     {totalScore !== null ? totalScore.toFixed(1) : "--"}
                   </CardTitle>
@@ -129,6 +129,12 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             </div>
           </CardHeader>
           <CardContent>
+            <p className="text-xs text-slate-600 mb-3 sm:mb-4">
+              {totalScore === null
+                ? "Pontuacao composta desativada no modo estrito IFData. A tela exibe apenas valores auditados diretamente contra o BCB."
+                : "Esta nota é calculada com indicadores técnicos oficiais do BCB."
+              }
+            </p>
             <div className="relative pt-2">
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div
@@ -170,7 +176,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             description="Mínimo regulatório: 11%"
             iconColor="text-blue-600"
             iconBg="bg-blue-50"
-            tooltip="Quanto maior, mais protegido está o banco. Indica se ele tem capital suficiente para absorver perdas. O mínimo exigido pelo Banco Central é 11%. Acima de 15% é considerado saudável."
+            tooltip="Indicador de capital regulatorio. O minimo exigido pelo Banco Central e 11%."
           />
           <MetricCard
             icon={Target}
@@ -182,19 +188,22 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             description="Retorno sobre patrimônio"
             iconColor="text-green-600"
             iconBg="bg-green-50"
-            tooltip="Mede o lucro que o banco gera para cada real investido pelos seus donos (acionistas). Quanto maior, mais eficiente e lucrativo é o banco. Acima de 18% é excelente."
+            tooltip="Retorno sobre patrimonio (ROE). Mostra a eficiencia de resultado em relacao ao capital do banco."
           />
           <MetricCard
             icon={Droplets}
-            label="Liquidez (LCR)"
+            label={snapshot?.lcr != null ? "Liquidez (LCR)" : "Liquidez Imediata"}
             value={snapshot?.lcr ?? snapshot?.quickLiquidity ?? null}
             unit="%"
             min={100}
             ideal={130}
-            description="Liquidity Coverage Ratio"
+            description={snapshot?.lcr != null ? "Liquidity Coverage Ratio" : "Disponíveis / Depósitos à vista"}
             iconColor="text-cyan-600"
             iconBg="bg-cyan-50"
-            tooltip="Mostra se o banco tem dinheiro suficiente para honrar todos os seus compromissos a curto prazo em uma crise de 30 dias. O mínimo é 100%. Quanto maior, mais seguro é o banco."
+            tooltip={snapshot?.lcr != null
+              ? "Indicador regulatorio de liquidez de curto prazo (LCR). O minimo exigido pelo BCB e 100%."
+              : "Liquidez Imediata: relacao entre recursos imediatamente disponiveis e depositos a vista. Valores acima de 100% indicam folga de liquidez."
+            }
           />
           <MetricCard
             icon={AlertCircle}
@@ -207,7 +216,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             iconColor="text-orange-600"
             iconBg="bg-orange-50"
             inverse
-            tooltip="Percentual de clientes que estão atrasados nos pagamentos há mais de 90 dias. Quanto menor, melhor — significa que o banco faz boas análises de crédito e tem clientes que pagam em dia."
+            tooltip="Percentual de operacoes com atraso acima de 90 dias (NPL). Valores menores indicam menor inadimplencia."
           />
         </div>
       )}
@@ -219,12 +228,21 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
         </div>
       ) : (
         <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <BreakdownCard title="Capital"       score={scores?.capitalScore       ?? null} color="from-blue-500 to-blue-400" />
-          <BreakdownCard title="Liquidez"      score={scores?.liquidityScore     ?? null} color="from-cyan-500 to-cyan-400" />
-          <BreakdownCard title="Rentabilidade" score={scores?.profitabilityScore ?? null} color="from-green-500 to-green-400" />
-          <BreakdownCard title="Crédito"       score={scores?.creditScore        ?? null} color="from-purple-500 to-purple-400" />
+          <BreakdownCard title="Capital (pontuacao)"       score={scores?.capitalScore       ?? null} color="from-blue-500 to-blue-400" />
+          <BreakdownCard title="Liquidez (pontuacao)"      score={scores?.liquidityScore     ?? null} color="from-cyan-500 to-cyan-400" />
+          <BreakdownCard title="Rentabilidade (pontuacao)" score={scores?.profitabilityScore ?? null} color="from-green-500 to-green-400" />
+          <BreakdownCard title="Credito (pontuacao)"       score={scores?.creditScore        ?? null} color="from-purple-500 to-purple-400" />
         </div>
       )}
+
+      <Card className="border border-slate-200 bg-white/95">
+        <CardContent className="pt-4 sm:pt-5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+          <p>
+            Como ler os dados: os cards de cima (Basileia, ROE, Liquidez e Inadimplencia) sao os valores reais da API do BCB.
+            Os cards de baixo sao notas de 0 a 100 para facilitar comparacao rapida.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -342,6 +360,7 @@ function BreakdownCard({ title, score, color }: BreakdownCardProps) {
           <div className="text-2xl font-bold">
             {hasScore ? score!.toFixed(0) : "--"}
           </div>
+          <p className="text-xs text-slate-500">Escala tecnica de 0 a 100 (nao e %)</p>
           <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
               className={cn("h-full rounded-full bg-gradient-to-r", hasScore ? color : "from-slate-200 to-slate-200")}

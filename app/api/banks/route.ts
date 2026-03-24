@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // Sempre buscar dados frescos do banco — sem cache em nenhuma camada
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const rateLimit = await applyRateLimit({
+    request,
+    scope: "api:banks:list",
+    maxRequests: 120,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.allowed) {
+    return rateLimit.response;
+  }
+
   try {
     // Buscar bancos do banco de dados
     const banks = await prisma.bank.findMany({
@@ -32,8 +44,8 @@ export async function GET() {
 
     // Transformar para o formato esperado pela interface
     const formattedBanks = banks.map(bank => {
-      const latestScore = bank.scores[0];
-      const previousScore = bank.scores[1];
+      const latestScore = bank.scores[0] ?? null;
+      const previousScore = bank.scores[1] ?? null;
       const latestSnapshot = bank.snapshots[0];
       const previousSnapshot = bank.snapshots[1];
 
@@ -67,28 +79,46 @@ export async function GET() {
         segment: bank.segment,
         
         // Score
-        status: latestScore?.status || 'unknown',
-        score: latestScore ? Math.round(latestScore.totalScore) : null,
+        status: latestScore?.status ?? 'unknown',
+        score: latestScore?.totalScore ?? null,
         scoreTrend,
         
         // Breakdown do score
-        capitalScore: latestScore?.capitalScore,
-        liquidityScore: latestScore?.liquidityScore,
-        profitabilityScore: latestScore?.profitabilityScore,
-        creditScore: latestScore?.creditScore,
-        reputationScore: latestScore?.reputationScore,
-        sentimentScore: latestScore?.sentimentScore,
-        marketScore: latestScore?.marketScore,
+        capitalScore: latestScore?.capitalScore ?? null,
+        liquidityScore: latestScore?.liquidityScore ?? null,
+        profitabilityScore: latestScore?.profitabilityScore ?? null,
+        creditScore: latestScore?.creditScore ?? null,
+        reputationScore: latestScore?.reputationScore ?? null,
+        sentimentScore: latestScore?.sentimentScore ?? null,
+        marketScore: latestScore?.marketScore ?? null,
         
         // Métricas principais
         basilRatio: latestSnapshot?.basilRatio,
         basileaTrend,
+        lcr: latestSnapshot?.lcr,
         roe: latestSnapshot?.roe,
         roeTrend,
         roa: latestSnapshot?.roa,
         quickLiquidity: latestSnapshot?.quickLiquidity,
         nplRatio: latestSnapshot?.nplRatio,
         nplTrend,
+
+        // Score técnico de segurança usando apenas dados BCB
+        bcbSafetyScore: calculateBCBSafetyScore({
+          basilRatio: latestSnapshot?.basilRatio,
+          lcr: latestSnapshot?.lcr,
+          quickLiquidity: latestSnapshot?.quickLiquidity,
+          roe: latestSnapshot?.roe,
+          nplRatio: latestSnapshot?.nplRatio,
+        }),
+        bcbDataCoverage: getBCBDataCoverage({
+          basilRatio: latestSnapshot?.basilRatio,
+          lcr: latestSnapshot?.lcr,
+          quickLiquidity: latestSnapshot?.quickLiquidity,
+          roe: latestSnapshot?.roe,
+          nplRatio: latestSnapshot?.nplRatio,
+        }),
+        bcbReferenceDate: latestSnapshot?.date || null,
         
         // Tamanho
         totalAssets: latestSnapshot?.totalAssets,
@@ -110,7 +140,18 @@ export async function GET() {
     // Adicionar rankings
     const rankedBanks = addRankings(uniqueBanks);
 
-    return NextResponse.json(rankedBanks);
+    const responseHeaders = new Headers({
+      "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+    });
+    for (const [key, value] of Object.entries(rateLimit.headers)) {
+      if (typeof value === "string") {
+        responseHeaders.set(key, value);
+      }
+    }
+
+    return NextResponse.json(rankedBanks, {
+      headers: responseHeaders,
+    });
   } catch (error) {
     console.error("Error fetching banks:", error);
     return NextResponse.json(
@@ -118,6 +159,74 @@ export async function GET() {
       { status: 500 }
     );
   }
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Score 0-100 com base somente em indicadores técnicos do BCB.
+ */
+function calculateBCBSafetyScore(metrics: {
+  basilRatio?: number | null;
+  lcr?: number | null;
+  quickLiquidity?: number | null;
+  roe?: number | null;
+  nplRatio?: number | null;
+}): number | null {
+  const components: number[] = [];
+
+  if (typeof metrics.basilRatio === 'number') {
+    const basileiaScore = clamp(((metrics.basilRatio - 11) / (20 - 11)) * 100, 0, 100);
+    components.push(basileiaScore * 0.35);
+  }
+
+  if (typeof metrics.lcr === 'number') {
+    const lcrScore = clamp(((metrics.lcr - 100) / (220 - 100)) * 100, 0, 100);
+    components.push(lcrScore * 0.25);
+  } else if (typeof metrics.quickLiquidity === 'number') {
+    const quickLiquidityScore = clamp(((metrics.quickLiquidity - 20) / (100 - 20)) * 100, 0, 100);
+    components.push(quickLiquidityScore * 0.25);
+  }
+
+  if (typeof metrics.roe === 'number') {
+    const roeScore = clamp((metrics.roe / 25) * 100, 0, 100);
+    components.push(roeScore * 0.2);
+  }
+
+  if (typeof metrics.nplRatio === 'number') {
+    const nplScore = clamp(((8 - metrics.nplRatio) / (8 - 1)) * 100, 0, 100);
+    components.push(nplScore * 0.2);
+  }
+
+  if (components.length < 2) {
+    return null;
+  }
+
+  return Number(components.reduce((acc, current) => acc + current, 0).toFixed(2));
+}
+
+function getBCBDataCoverage(metrics: {
+  basilRatio?: number | null;
+  lcr?: number | null;
+  quickLiquidity?: number | null;
+  roe?: number | null;
+  nplRatio?: number | null;
+}) {
+  const hasLiquidity = typeof metrics.lcr === 'number' || typeof metrics.quickLiquidity === 'number';
+  const usedMetrics = [
+    typeof metrics.basilRatio === 'number',
+    hasLiquidity,
+    typeof metrics.roe === 'number',
+    typeof metrics.nplRatio === 'number',
+  ].filter(Boolean).length;
+
+  return {
+    usedMetrics,
+    totalMetrics: 4,
+    coveragePct: Number(((usedMetrics / 4) * 100).toFixed(0)),
+  };
 }
 
 /**
@@ -191,19 +300,22 @@ function consolidateDuplicateBanks(banks: any[]) {
  * Adiciona rankings aos bancos
  */
 function addRankings(banks: any[]) {
-  // Ordenar por score (decrescente)
-  const sortedByScore = [...banks]
-    .filter(b => b.score !== null)
-    .sort((a, b) => (b.score || 0) - (a.score || 0));
+  // Ordenar por score de segurança BCB (decrescente)
+  const sortedByBCBScore = [...banks]
+    .filter(b => b.bcbSafetyScore !== null && b.bcbSafetyScore !== undefined)
+    .sort((a, b) => (b.bcbSafetyScore || 0) - (a.bcbSafetyScore || 0));
 
   // Adicionar ranking
   return banks.map(bank => {
-    const rankingByScore = sortedByScore.findIndex(b => b.id === bank.id) + 1;
+    const rankingByBCB = sortedByBCBScore.findIndex(b => b.id === bank.id) + 1;
+    const ranking = rankingByBCB || null;
+    const totalBanks = sortedByBCBScore.length;
     
     return {
       ...bank,
-      ranking: rankingByScore || null,
-      totalBanks: sortedByScore.length,
+      ranking,
+      totalBanks,
+      rankingSource: 'bcb',
     };
   });
 }

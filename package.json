@@ -15,6 +15,8 @@
     "update:test": "tsx scripts/test-auto-update.ts",
     "update:status": "curl http://localhost:3000/api/ingest/status",
     "update:cron": "curl -X POST http://localhost:3000/api/ingest/cron -H 'Authorization: Bearer dev-secret-change-in-production'",
+    "deploy:gcp": "powershell -ExecutionPolicy Bypass -File scripts/deploy-gcp.ps1",
+    "smoke:prod": "powershell -ExecutionPolicy Bypass -File scripts/smoke-test-prod.ps1",
     "postinstall": "prisma generate"
   },
   "dependencies": {

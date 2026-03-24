@@ -23,21 +23,16 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
   const digitalBanks = banks.filter(b => b.type === 'digital').length;
   const traditionalBanks = banks.filter(b => b.type === 'traditional').length;
 
-  const scores = banks.map(b => b.score).filter((score): score is number => typeof score === 'number');
+  const scores = banks.map(b => b.bcbSafetyScore).filter((score): score is number => typeof score === 'number');
   const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
   const excellentBanks = scores.filter(s => s >= 80).length;
   const goodBanks = scores.filter(s => s >= 70 && s < 80).length;
   const attentionBanks = scores.filter(s => s >= 60 && s < 70).length;
   const criticalBanks = scores.filter(s => s < 60).length;
 
-  const trendValues = banks.map(b => b.scoreTrend).filter((trend): trend is number => typeof trend === 'number');
-  const avgTrend = trendValues.length > 0
-    ? trendValues.reduce((a, b) => a + b, 0) / trendValues.length
-    : null;
-
   const topBanks = banks
-    .filter(bank => typeof bank.score === 'number')
-    .map(bank => ({ bank, score: bank.score as number }))
+    .filter(bank => typeof bank.bcbSafetyScore === 'number')
+    .map(bank => ({ bank, score: bank.bcbSafetyScore as number }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
 
@@ -52,26 +47,25 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
           description={`${digitalBanks} digitais, ${traditionalBanks} tradicionais`}
         />
         <StatCard
-          label="Score Médio"
+          label="Score Médio BCB"
           value={avgScore.toFixed(1)}
           icon={TrendingUp}
           color="green"
-          description="Média geral de saúde"
-          trend={avgTrend !== null ? `${avgTrend >= 0 ? '+' : ''}${avgTrend.toFixed(1)}` : undefined}
+          description="Media do indice tecnico (0-100)"
         />
         <StatCard
-          label="Excelentes"
+          label="Faixa A"
           value={excellentBanks}
           icon={TrendingUp}
           color="green"
-          description="Score ≥ 80"
+          description="Indice >= 80"
         />
         <StatCard
-          label="Atenção/Críticos"
+          label="Faixa C e D"
           value={attentionBanks + criticalBanks}
           icon={AlertCircle}
           color="orange"
-          description={`${attentionBanks} atenção, ${criticalBanks} críticos`}
+          description={`${attentionBanks} na faixa C, ${criticalBanks} na faixa D`}
         />
       </div>
 
@@ -79,14 +73,19 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
         <CardHeader className="pb-4 sm:pb-6">
           <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
             <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-            Top 5 Bancos Mais Saudáveis
+            Top 5 por Indice Tecnico BCB
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm">
-            Baseado no score geral de saúde financeira
+            Baseado apenas em dados técnicos oficiais do Banco Central (API BCB)
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
           <div className="space-y-3 sm:space-y-4">
+            {topBanks.length === 0 && (
+              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-600">
+                Sem dados técnicos suficientes do BCB para calcular o ranking no momento.
+              </div>
+            )}
             {topBanks.map((item, index) => (
               <div
                 key={item.bank.id}
@@ -116,9 +115,9 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
                         <div className="text-xl font-bold">{item.score.toFixed(1)}</div>
                         <div className={cn(
                           "text-xs font-medium",
-                          item.score >= 80 ? "text-green-600" : "text-blue-600"
+                          item.score >= 80 ? "text-green-600" : item.score >= 70 ? "text-blue-600" : "text-amber-600"
                         )}>
-                          {item.score >= 80 ? "Excelente" : "Bom"}
+                          {item.score >= 80 ? "Faixa A" : item.score >= 70 ? "Faixa B" : "Faixa C"}
                         </div>
                       </div>
                     </>
@@ -167,15 +166,15 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
 
         <Card className="bg-white/95 border-white/30 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="pb-4 sm:pb-5">
-            <CardTitle className="text-sm sm:text-base">Distribuição de Saúde</CardTitle>
+            <CardTitle className="text-sm sm:text-base">Distribuicao por Faixa Tecnica</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3 sm:space-y-4">
-              <HealthBar label="Excelente" count={excellentBanks} color="from-green-500 to-green-400" total={Math.max(totalBanks, 1)} />
-              <HealthBar label="Bom" count={goodBanks} color="from-blue-500 to-blue-400" total={Math.max(totalBanks, 1)} />
-              <HealthBar label="Atenção" count={attentionBanks} color="from-yellow-500 to-yellow-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label="Faixa A (>=80)" count={excellentBanks} color="from-green-500 to-green-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label="Faixa B (70-79)" count={goodBanks} color="from-blue-500 to-blue-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label="Faixa C (60-69)" count={attentionBanks} color="from-yellow-500 to-yellow-400" total={Math.max(totalBanks, 1)} />
               {criticalBanks > 0 && (
-                <HealthBar label="Crítico" count={criticalBanks} color="from-red-500 to-red-400" total={Math.max(totalBanks, 1)} />
+                <HealthBar label="Faixa D (<60)" count={criticalBanks} color="from-red-500 to-red-400" total={Math.max(totalBanks, 1)} />
               )}
             </div>
           </CardContent>

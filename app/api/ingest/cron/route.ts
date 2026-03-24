@@ -1,7 +1,7 @@
 /**
- * CRON Job - Atualização Automática Diária
+ * CRON Job - Atualização Automática
  * 
- * Roda diariamente às 2h AM
+ * Executa varias vezes por dia para checar novas publicacoes do BCB
  * - Verifica se há novos dados BCB
  * - Ingere dados incrementais
  * - Recomputa scores
@@ -27,7 +27,17 @@ export async function GET(request: Request) {
   
   // Validar autenticação do CRON (Vercel envia header específico)
   const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET || 'dev-secret-change-in-production';
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Server misconfiguration - CRON_SECRET ausente',
+      },
+      { status: 500 }
+    );
+  }
   
   if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json(

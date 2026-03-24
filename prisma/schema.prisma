@@ -233,3 +233,18 @@ model BankReputation {
   @@index([referenceDate])
   @@map("bank_reputation")
 }
+
+model CronExecution {
+  id            String   @id @default(cuid())
+  executedAt    DateTime @default(now())
+  action        String   // "check", "ingest", "score", "full_cycle"
+  status        String   // "success", "skipped", "error"
+  banksProcessed Int?
+  scoresComputed Int?
+  message       String?  @db.Text
+  durationMs    Int?
+  
+  @@index([executedAt])
+  @@index([status])
+  @@map("cron_executions")
+}

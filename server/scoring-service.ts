@@ -85,9 +85,26 @@ export async function computeBankScore(bankId: string, date: Date = new Date()) 
     },
   });
 
-  // Criar score no banco
-  const score = await prisma.bankScore.create({
-    data: {
+  // Salva score de forma idempotente para permitir recomputacoes frequentes.
+  const score = await prisma.bankScore.upsert({
+    where: {
+      bankId_date: {
+        bankId,
+        date: snapshot.date,
+      },
+    },
+    update: {
+      totalScore: scoreData.totalScore,
+      status: scoreData.status,
+      capitalScore: scoreData.breakdown.capital,
+      liquidityScore: scoreData.breakdown.liquidity,
+      profitabilityScore: scoreData.breakdown.profitability,
+      creditScore: scoreData.breakdown.credit,
+      reputationScore: scoreData.breakdown.reputation,
+      sentimentScore: scoreData.breakdown.sentiment,
+      marketScore: scoreData.breakdown.market,
+    },
+    create: {
       bankId,
       date: snapshot.date,
       totalScore: scoreData.totalScore,

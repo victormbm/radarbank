@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataIngestionService } from "@/server/data-ingestion-service";
+import { requireAdminAccess } from "@/lib/admin-auth";
 
 /**
  * POST /api/ingest/run
@@ -12,6 +13,11 @@ import { dataIngestionService } from "@/server/data-ingestion-service";
  * }
  */
 export async function POST(request: Request) {
+  const auth = requireAdminAccess(request);
+  if (!auth.allowed) {
+    return auth.response;
+  }
+
   try {
     const body = await request.json().catch(() => ({}));
     const { referenceDate } = body;
@@ -60,7 +66,12 @@ export async function POST(request: Request) {
  * 
  * Retorna informações sobre a última ingestão
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = requireAdminAccess(request);
+  if (!auth.allowed) {
+    return auth.response;
+  }
+
   try {
     const { prisma } = await import("@/lib/db");
     

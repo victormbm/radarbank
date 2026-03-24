@@ -79,6 +79,8 @@ export interface DashboardBank {
   quickLiquidity?: number | null;
   nplRatio?: number | null;
   nplTrend?: number | null;
+  lcr?: number | null;
+  bcbSafetyScore?: number | null;
 
   totalAssets?: number | null;
   equity?: number | null;

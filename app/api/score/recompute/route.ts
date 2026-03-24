@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { computeDetailedScore } from "@/lib/scoring-v2";
 import { marketStressService } from "@/server/market-stress-service";
+import { requireAdminAccess } from "@/lib/admin-auth";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const auth = requireAdminAccess(request);
+  if (!auth.allowed) {
+    return auth.response;
+  }
+
   try {
     console.log("[SCORE] Iniciando recálculo de scores...");
 

@@ -7,6 +7,11 @@
 
 import { NextResponse } from 'next/server';
 import { getLastUpdateMetadata, checkForNewData } from '@/lib/update-tracker';
+import {
+  DATA_POLICY,
+  evaluateDataStatus,
+  getUpdateRoutineSummary,
+} from '@/lib/data-freshness-policy';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +26,15 @@ export async function GET() {
         status: 'no_data',
         message: 'Nenhuma atualização encontrada. Execute primeira ingestão.',
         hasNewDataAvailable: checkResult.hasNewData,
+        routines: getUpdateRoutineSummary(),
+        metadata: {
+          source: DATA_POLICY.source,
+          publicationModel: DATA_POLICY.publicationModel,
+          checkFrequency: `A cada ${DATA_POLICY.checkIntervalHours} horas`,
+          auditFrequency: `A cada ${DATA_POLICY.auditIntervalHours} horas`,
+          apiCache: `${DATA_POLICY.apiCacheMinutes} minutos`,
+          uiRefresh: `${DATA_POLICY.uiRefreshMinutes} minutos`,
+        },
       });
     }
 
@@ -52,12 +66,8 @@ export async function GET() {
       (expectedPublishDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Status baseado em idade dos dados
-    let dataStatus: 'fresh' | 'current' | 'stale' | 'outdated';
-    if (daysSinceUpdate < 7) dataStatus = 'fresh';
-    else if (daysSinceUpdate < 45) dataStatus = 'current';
-    else if (daysSinceUpdate < 120) dataStatus = 'stale';
-    else dataStatus = 'outdated';
+    // Status baseado no ciclo trimestral oficial do IFData.
+    const dataStatus = evaluateDataStatus(daysSinceUpdate);
 
     return NextResponse.json({
       success: true,
@@ -78,10 +88,14 @@ export async function GET() {
       },
       hasNewDataAvailable: checkResult.hasNewData,
       message: checkResult.message,
+      routines: getUpdateRoutineSummary(),
       metadata: {
-        updateFrequency: 'Trimestral (BCB publica com ~45 dias de atraso)',
-        checkFrequency: 'Diário às 2h AM',
-        source: 'Banco Central do Brasil - IF.data API',
+        source: DATA_POLICY.source,
+        publicationModel: DATA_POLICY.publicationModel,
+        checkFrequency: `A cada ${DATA_POLICY.checkIntervalHours} horas`,
+        auditFrequency: `A cada ${DATA_POLICY.auditIntervalHours} horas`,
+        apiCache: `${DATA_POLICY.apiCacheMinutes} minutos`,
+        uiRefresh: `${DATA_POLICY.uiRefreshMinutes} minutos`,
       },
     });
   } catch (error: any) {

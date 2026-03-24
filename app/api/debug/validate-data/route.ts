@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { requireAdminAccess } from "@/lib/admin-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const auth = requireAdminAccess(request);
+  if (!auth.allowed) {
+    return auth.response;
+  }
+
   try {
     // 1. Contar bancos
     const banksCount = await prisma.bank.count();

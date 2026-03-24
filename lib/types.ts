@@ -66,4 +66,34 @@ export interface BankDetail {
   snapshot: BankDetailSnapshot | null;
   scores: BankDetailScores | null;
   reputation: BankDetailReputation | null;
+  metrics: Array<{
+    date: string;
+    basilRatio: number | null;
+    cet1Ratio: number | null;
+    tier1Ratio: number | null;
+    leverageRatio: number | null;
+    lcr: number | null;
+    nsfr: number | null;
+    quickLiquidity: number | null;
+    loanToDeposit: number | null;
+    roe: number | null;
+    roa: number | null;
+    nim: number | null;
+    costToIncome: number | null;
+    nplRatio: number | null;
+    coverageRatio: number | null;
+    writeOffRate: number | null;
+    totalAssets: number | null;
+    equity: number | null;
+  }>;
+  scoreHistory: Array<{
+    date: string;
+    totalScore: number;
+    capitalScore: number;
+    liquidityScore: number;
+    profitabilityScore: number;
+    creditScore: number;
+    reputationScore: number | null;
+    status: string;
+  }>;
 }

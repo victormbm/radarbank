@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { bcbAPI } from '@/server/bcb-api-service';
 import { prisma } from '@/lib/db';
-import { computeDetailedScore } from '@/lib/scoring-v2';
+import { requireAdminAccess } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 segundos (Vercel limit)
@@ -31,6 +31,11 @@ interface IngestionStats {
 }
 
 export async function GET(request: NextRequest) {
+  const auth = requireAdminAccess(request);
+  if (!auth.allowed) {
+    return auth.response;
+  }
+
   const startTime = new Date();
   const stats: IngestionStats = {
     success: false,
@@ -190,93 +195,80 @@ async function processQuarterData(
         console.log(`   ✓  Banco já existe no sistema`);
       }
 
-      // 2. Verificar se snapshot já existe
-      const existingSnapshot = await prisma.bankSnapshot.findFirst({
+      // 2. Criar ou atualizar snapshot em modo estrito
+      const snapshot = await prisma.bankSnapshot.upsert({
+        where: {
+          bankId_date: {
+            bankId: bank.id,
+            date: new Date(dataBase)
+          }
+        },
+        update: {
+          bankId: bank.id,
+          date: new Date(dataBase),
+          // Capital
+          basilRatio: bankData.basileia ?? null,
+          tier1Ratio: bankData.tier1 ?? null,
+          cet1Ratio: bankData.cet1 ?? null,
+          leverageRatio: bankData.alavancagem ?? null,
+          // Patrimônio e Ativos
+          equity: bankData.patrimonioLiquido ?? null,
+          totalAssets: bankData.ativoTotal ?? null,
+          totalDeposits: bankData.totalDeposits ?? null,
+          loanPortfolio: bankData.loanPortfolio ?? null,
+          // Rentabilidade
+          roe: bankData.roe ?? null,
+          roa: bankData.roa ?? null,
+          nim: bankData.nim ?? null,
+          costToIncome: bankData.costToIncome ?? null,
+          // Liquidez
+          lcr: bankData.lcr ?? null,
+          nsfr: bankData.nsfr ?? null,
+          quickLiquidity: bankData.liquidez ?? null,
+          loanToDeposit: bankData.loanToDeposit ?? null,
+          // Crédito
+          nplRatio: bankData.inadimplencia ?? null,
+          coverageRatio: bankData.coverageRatio ?? null,
+          writeOffRate: bankData.writeOffRate ?? null,
+          creditQuality: bankData.creditQuality ?? null,
+        },
+        create: {
+          bankId: bank.id,
+          date: new Date(dataBase),
+          basilRatio: bankData.basileia ?? null,
+          tier1Ratio: bankData.tier1 ?? null,
+          cet1Ratio: bankData.cet1 ?? null,
+          leverageRatio: bankData.alavancagem ?? null,
+          equity: bankData.patrimonioLiquido ?? null,
+          totalAssets: bankData.ativoTotal ?? null,
+          totalDeposits: bankData.totalDeposits ?? null,
+          loanPortfolio: bankData.loanPortfolio ?? null,
+          roe: bankData.roe ?? null,
+          roa: bankData.roa ?? null,
+          nim: bankData.nim ?? null,
+          costToIncome: bankData.costToIncome ?? null,
+          lcr: bankData.lcr ?? null,
+          nsfr: bankData.nsfr ?? null,
+          quickLiquidity: bankData.liquidez ?? null,
+          loanToDeposit: bankData.loanToDeposit ?? null,
+          nplRatio: bankData.inadimplencia ?? null,
+          coverageRatio: bankData.coverageRatio ?? null,
+          writeOffRate: bankData.writeOffRate ?? null,
+          creditQuality: bankData.creditQuality ?? null,
+        },
+      });
+
+      stats.snapshotsCreated++;
+      console.log(`   ✅ Snapshot sincronizado (ID: ${snapshot.id})`);
+
+      // 3. Em modo estritamente auditado, não persistimos score composto.
+      await prisma.bankScore.deleteMany({
         where: {
           bankId: bank.id,
           date: new Date(dataBase)
         }
       });
-
-      if (existingSnapshot) {
-        console.log(`   ⏭️  Snapshot já existe para ${dataBase} - pulando`);
-        continue;
-      }
-
-      // 3. Criar snapshot
-      const snapshot = await prisma.bankSnapshot.create({
-        data: {
-          bankId: bank.id,
-          date: new Date(dataBase),
-          // Capital
-          basilRatio: bankData.basileia,
-          tier1Ratio: bankData.tier1,
-          cet1Ratio: bankData.cet1,
-          leverageRatio: bankData.alavancagem,
-          // Patrimônio e Ativos
-          equity: bankData.patrimonioLiquido,
-          totalAssets: bankData.ativoTotal,
-          totalDeposits: bankData.totalDeposits,
-          loanPortfolio: bankData.loanPortfolio,
-          // Rentabilidade
-          roe: bankData.roe,
-          roa: bankData.roa,
-          nim: bankData.nim,
-          costToIncome: bankData.costToIncome,
-          // Liquidez
-          lcr: bankData.lcr,
-          nsfr: bankData.nsfr,
-          loanToDeposit: bankData.loanToDeposit,
-          // Crédito
-          nplRatio: bankData.inadimplencia,
-          coverageRatio: bankData.coverageRatio,
-          writeOffRate: bankData.writeOffRate,
-          creditQuality: bankData.creditQuality,
-        }
-      });
-
-      stats.snapshotsCreated++;
-      console.log(`   ✅ Snapshot criado (ID: ${snapshot.id})`);
-
-      // 4. Calcular e salvar score
-      const scoreData = computeDetailedScore({
-        basilRatio: snapshot.basilRatio,
-        tier1Ratio: snapshot.tier1Ratio,
-        cet1Ratio: snapshot.cet1Ratio,
-        leverageRatio: snapshot.leverageRatio,
-        equity: snapshot.equity,
-        totalAssets: snapshot.totalAssets,
-        totalDeposits: snapshot.totalDeposits,
-        loanPortfolio: snapshot.loanPortfolio,
-        roe: snapshot.roe,
-        roa: snapshot.roa,
-        nim: snapshot.nim,
-        costToIncome: snapshot.costToIncome,
-        lcr: snapshot.lcr,
-        nsfr: snapshot.nsfr,
-        loanToDeposit: snapshot.loanToDeposit,
-        nplRatio: snapshot.nplRatio,
-        coverageRatio: snapshot.coverageRatio,
-      });
-
-      await prisma.bankScore.create({
-        data: {
-          bankId: bank.id,
-          date: new Date(dataBase),
-          totalScore: scoreData.totalScore,
-          status: scoreData.status,
-          capitalScore: scoreData.breakdown.capital,
-          liquidityScore: scoreData.breakdown.liquidity,
-          profitabilityScore: scoreData.breakdown.profitability,
-          creditScore: scoreData.breakdown.credit,
-          reputationScore: scoreData.breakdown.reputation,
-          sentimentScore: scoreData.breakdown.sentiment,
-          marketScore: scoreData.breakdown.market,
-        }
-      });
-
-      stats.scoresCreated++;
-      console.log(`   🎯 Score calculado: ${scoreData.totalScore.toFixed(1)} (${scoreData.status})`);
+      console.log('   ℹ️  Score composto desativado em modo IFData estrito');
 
     } catch (error) {
       const errorMsg = `Erro ao processar ${bankData.nome}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;

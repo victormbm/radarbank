@@ -4,6 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { bcbAPI } from '@/server/bcb-api-service';
 
 const prisma = new PrismaClient();
 
@@ -46,11 +47,25 @@ export async function saveUpdateMetadata(metadata: UpdateMetadata) {
  */
 export async function getLastUpdateMetadata(): Promise<UpdateMetadata | null> {
   try {
-    // Buscar o snapshot mais recente
-    const latestSnapshot = await prisma.bankSnapshot.findFirst({
+    // Buscar o snapshot mais recente limitado a data-base oficial atualmente disponivel.
+    const officialLatestDate = new Date(bcbAPI.getLatestAvailableQuarter().date);
+    let latestSnapshot = await prisma.bankSnapshot.findFirst({
+      where: {
+        date: {
+          lte: officialLatestDate,
+        },
+      },
       orderBy: { date: 'desc' },
       include: { bank: true },
     });
+
+    // Fallback para bases antigas que ainda nao foram normalizadas.
+    if (!latestSnapshot) {
+      latestSnapshot = await prisma.bankSnapshot.findFirst({
+        orderBy: { date: 'desc' },
+        include: { bank: true },
+      });
+    }
 
     if (!latestSnapshot) return null;
 
@@ -195,46 +210,59 @@ function getSeverity(changePercent: number): 'low' | 'medium' | 'high' | 'critic
 export async function checkForNewData(): Promise<{
   hasNewData: boolean;
   localLatestDate: string | null;
+  officialLatestDate: string | null;
   message: string;
 }> {
   try {
     const lastUpdate = await getLastUpdateMetadata();
+    const latestQuarter = bcbAPI.getLatestAvailableQuarter();
+    const officialLatestDate = latestQuarter.date;
+    const officialLatestTs = new Date(officialLatestDate).getTime();
     
     if (!lastUpdate) {
       return {
         hasNewData: true,
         localLatestDate: null,
-        message: 'Nenhum dado local encontrado. Primeira ingestão necessária.',
+        officialLatestDate,
+        message: `Nenhum dado local encontrado. Primeira ingestão necessária (base oficial: ${officialLatestDate}).`,
       };
     }
 
-    // Calcular próxima data esperada de atualização BCB
-    const refDate = new Date(lastUpdate.dataReferenceDate);
-    const today = new Date();
-    const daysSinceUpdate = Math.floor(
-      (today.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const localLatestDate = new Date(lastUpdate.dataReferenceDate)
+      .toISOString()
+      .split('T')[0];
+    const localLatestTs = new Date(localLatestDate).getTime();
 
-    // BCB publica trimestralmente com ~45 dias de atraso
-    // Se passou mais de 120 dias (trimestre + atraso), provavelmente há novos dados
-    if (daysSinceUpdate > 120) {
+    if (Number.isNaN(localLatestTs)) {
       return {
         hasNewData: true,
-        localLatestDate: lastUpdate.dataReferenceDate,
-        message: `Dados locais com ${daysSinceUpdate} dias. Novos dados provavelmente disponíveis.`,
+        localLatestDate: null,
+        officialLatestDate,
+        message: `Data local inválida. Recomendado forçar ingestão para base oficial ${officialLatestDate}.`,
+      };
+    }
+
+    if (localLatestTs < officialLatestTs) {
+      return {
+        hasNewData: true,
+        localLatestDate,
+        officialLatestDate,
+        message: `Nova base oficial detectada (${officialLatestDate}). Última local: ${localLatestDate}.`,
       };
     }
 
     return {
       hasNewData: false,
-      localLatestDate: lastUpdate.dataReferenceDate,
-      message: `Dados atualizados. Última ref: ${lastUpdate.dataReferenceDate}`,
+      localLatestDate,
+      officialLatestDate,
+      message: `Dados atualizados na última base oficial (${officialLatestDate}).`,
     };
   } catch (error) {
     console.error('Erro ao verificar novos dados:', error);
     return {
       hasNewData: false,
       localLatestDate: null,
+      officialLatestDate: null,
       message: 'Erro ao verificar novos dados',
     };
   }

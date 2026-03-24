@@ -1,654 +1,497 @@
 /**
- * 🎯 Serviço de integração com API IFData do Banco Central do Brasil
- * 
- * Documentação oficial: https://dadosabertos.bcb.gov.br/dataset/ifdata---dados-selecionados-de-instituies-financeiras
- * 
- * API gratuita, sem autenticação, dados oficiais trimestrais
- * Atualização: 60 dias após mar/jun/set, 90 dias após dez
+ * Integracao oficial com o IFData (BCB / Olinda OData v1).
+ *
+ * Regras deste adaptador:
+ * - Usa apenas endpoints oficialmente documentados pelo BCB.
+ * - Usa apenas colunas efetivamente encontradas no payload real do IFData.
+ * - Mantem metricas nao auditadas como null/undefined, em vez de inferir valores.
  */
 
-import { BCBBankData, BANK_CNPJ_MAP } from './bcb-data-service';
+import { BCBBankData } from './bcb-data-service';
 
-/**
- * Interface da resposta da API IFData (OData)
- */
-interface IFDataResponse {
+interface ODataResponse<T> {
   '@odata.context': string;
-  value: IFDataInstitution[];
+  value: T[];
 }
 
-/**
- * Instituição retornada pela API IFData
- */
-interface IFDataInstitution {
-  CNPJ: string;
+interface IFDataCadastroRow {
+  CodInst: string;
+  Data: string;
   NomeInstituicao: string;
-  DataBase: string; // "2025-12-31"
-  Segmento?: string;
-  // Indicadores de Capital
-  IndiceBasileia?: number;
-  CapitalNivel1?: number;
-  IndiceCET1?: number;
-  IndiceAlavancagem?: number;
-  PatrimonioLiquido?: number;
-  // Ativos e Passivos
-  AtivoTotal?: number;
-  DepositosTotal?: number;
-  CarteiraCredito?: number;
-  // Rentabilidade
-  LucroLiquido?: number;
-  ROE?: number;
-  ROA?: number;
-  MargemFinanceira?: number;
-  IndiceEficiencia?: number;
-  // Liquidez
-  LiquidezImediata?: number;
-  IndiceLCR?: number;
-  IndiceNSFR?: number;
-  // Crédito
-  Inadimplencia90Dias?: number;
-  ProvisionamentoCredito?: number;
-  TaxaWriteOff?: number;
-  // Imobilização
-  IndiceImobilizacao?: number;
+  DataInicioAtividade: number;
+  Tcb: string | null;
+  Td: string | null;
+  Tc: number | null;
+  SegmentoTb: string | null;
+  Atividade: string | null;
+  Uf: string | null;
+  Municipio: string | null;
+  Sr: string | null;
+  CodConglomeradoFinanceiro: string | null;
+  CodConglomeradoPrudencial: string | null;
+  CnpjInstituicaoLider: string | null;
+  Situacao: string | null;
 }
 
-/**
- * Dados de trimestres disponíveis
- */
+interface IFDataValorRow {
+  TipoInstituicao: number;
+  CodInst: string;
+  AnoMes: string;
+  NomeRelatorio: string;
+  NumeroRelatorio: string;
+  Grupo: string | null;
+  Conta: string;
+  NomeColuna: string;
+  DescricaoColuna: string;
+  Saldo: number | null;
+}
+
+interface ResolvedBankReference {
+  slug: string;
+  fullCnpj: string;
+  baseCode: string;
+  codInst: string;
+  tipoInstituicao: 1 | 3;
+  name: string;
+  segment: string | null;
+}
+
+interface TrackedBankConfig {
+  cnpj: string;
+  label: string;
+  searchTerm: string;
+}
+
+const MANUAL_BANK_OVERRIDES: Partial<Record<string, { codInst: string; tipoInstituicao: 1 | 3 }>> = {
+  nubank: {
+    codInst: 'C0084693',
+    tipoInstituicao: 1,
+  },
+};
+
 export interface QuarterData {
   year: number;
   quarter: 1 | 2 | 3 | 4;
-  date: string; // "2025-12-31"
-  availableAfter: Date; // Quando os dados ficam disponíveis
+  date: string;
+  availableAfter: Date;
 }
 
-/**
- * Classe principal para integração com API IFData do BCB
- */
 export class BCBAPIService {
-  private readonly BASE_URL = 'https://olinda.bcb.gov.br/olinda/servico/IFData/versao/v1/odata';
-  
-  // CNPJs completos dos bancos que monitoramos
-  private readonly TRACKED_BANKS = {
-    'nubank': '18236120000158',      // Nu Pagamentos S.A.
-    'itau': '60701190000104',        // Itaú Unibanco
-    'bb': '00000000000191',          // Banco do Brasil
-    'bradesco': '60746948000112',    // Bradesco
-    'caixa': '00360305000104',       // Caixa Econômica Federal
-    'santander': '90400888000142',   // Santander
-    'btg': '30306294000145',         // BTG Pactual
-    'safra': '58160789000128',       // Safra
-    'inter': '00416968000101',       // Banco Inter
-    'c6': '31872495000172',          // C6 Bank
-    'original': '92894922000135',    // Banco Original
-    'pagbank': '10573521000191',     // PagBank
-    'next': '74828799000112',        // Banco Next (CNPJ corrigido)
-    'neon': '92874270000160',        // Neon Pagamentos
+  private readonly BASE_URL = 'https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata';
+
+  private readonly TRACKED_BANKS: Record<string, TrackedBankConfig> = {
+    nubank: { cnpj: '18236120000158', label: 'Nu Pagamentos S.A.', searchTerm: 'NU' },
+    itau: { cnpj: '60701190000104', label: 'Itau Unibanco S.A.', searchTerm: 'ITAU' },
+    bb: { cnpj: '00000000000191', label: 'Banco do Brasil S.A.', searchTerm: 'BANCO DO BRASIL' },
+    bradesco: { cnpj: '60746948000112', label: 'Banco Bradesco S.A.', searchTerm: 'BRADESCO' },
+    caixa: { cnpj: '00360305000104', label: 'Caixa Economica Federal', searchTerm: 'CAIXA ECONOMICA FEDERAL' },
+    santander: { cnpj: '90400888000142', label: 'Banco Santander (Brasil) S.A.', searchTerm: 'SANTANDER' },
+    btg: { cnpj: '30306294000145', label: 'Banco BTG Pactual S.A.', searchTerm: 'BTG' },
+    safra: { cnpj: '58160789000128', label: 'Banco Safra S.A.', searchTerm: 'SAFRA' },
+    inter: { cnpj: '00416968000101', label: 'Banco Inter S.A.', searchTerm: 'INTER' },
+    c6: { cnpj: '31872495000172', label: 'Banco C6 S.A.', searchTerm: 'C6' },
+    original: { cnpj: '92894922000135', label: 'Banco Original S.A.', searchTerm: 'ORIGINAL' },
+    pagbank: { cnpj: '10573521000191', label: 'PagSeguro Internet S.A.', searchTerm: 'PAGSEGURO' },
+    next: { cnpj: '74828799000112', label: 'Banco Next S.A.', searchTerm: 'NEXT' },
+    neon: { cnpj: '92874270000160', label: 'Neon Pagamentos S.A.', searchTerm: 'NEON' },
   };
 
-  /**
-   * Calcula o último trimestre disponível baseado na data atual
-   */
   getLatestAvailableQuarter(): QuarterData {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // 1-12
-    
-    // Dados de DEZ: disponíveis 90 dias depois (final de março)
-    // Dados de MAR: disponíveis 60 dias depois (final de maio)
-    // Dados de JUN: disponíveis 60 dias depois (final de agosto)
-    // Dados de SET: disponíveis 60 dias depois (final de novembro)
-    
-    if (currentMonth >= 11) {
-      // Novembro em diante: dados de SET disponíveis
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+
+    if (currentMonth >= 11 && currentDay >= 30) {
       return {
         year: currentYear,
         quarter: 3,
         date: `${currentYear}-09-30`,
-        availableAfter: new Date(currentYear, 10, 25) // 25 de novembro
+        availableAfter: new Date(currentYear, 10, 30),
       };
-    } else if (currentMonth >= 8) {
-      // Agosto-outubro: dados de JUN disponíveis
+    }
+
+    if (currentMonth > 8 || (currentMonth === 8 && currentDay >= 31)) {
       return {
         year: currentYear,
         quarter: 2,
         date: `${currentYear}-06-30`,
-        availableAfter: new Date(currentYear, 7, 25) // 25 de agosto
+        availableAfter: new Date(currentYear, 7, 31),
       };
-    } else if (currentMonth >= 5) {
-      // Maio-julho: dados de MAR disponíveis
+    }
+
+    if (currentMonth > 5 || (currentMonth === 5 && currentDay >= 31)) {
       return {
         year: currentYear,
         quarter: 1,
         date: `${currentYear}-03-31`,
-        availableAfter: new Date(currentYear, 4, 25) // 25 de maio
+        availableAfter: new Date(currentYear, 4, 31),
       };
-    } else {
-      // Janeiro-abril: dados de DEZ do ano anterior
+    }
+
+    if (currentMonth > 3 || (currentMonth === 3 && currentDay >= 31)) {
       return {
         year: currentYear - 1,
         quarter: 4,
         date: `${currentYear - 1}-12-31`,
-        availableAfter: new Date(currentYear, 2, 30) // 30 de março
+        availableAfter: new Date(currentYear, 2, 31),
       };
     }
-  }
 
-  /**
-   * Busca lista de todas as instituições autorizadas
-   */
-  async fetchInstitutionsList(): Promise<string[]> {
-    try {
-      const url = `${this.BASE_URL}/Instituicoes?$format=json&$select=CNPJ,NomeInstituicao`;
-      
-      console.log('[BCB API] Buscando lista de instituições...');
-      console.log('[BCB API] URL:', url);
-      
-      const response = await fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data: IFDataResponse = await response.json();
-      
-      console.log(`[BCB API] ✅ ${data.value.length} instituições encontradas`);
-      
-      return data.value.map(inst => inst.CNPJ);
-      
-    } catch (error) {
-      console.error('[BCB API] ❌ Erro ao buscar instituições:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Busca dados financeiros de uma instituição específica
-   */
-  async fetchInstitutionData(cnpj: string, dataBase: string): Promise<IFDataInstitution | null> {
-    try {
-      // Remover formatação do CNPJ (manter apenas números)
-      const cleanCNPJ = cnpj.replace(/\D/g, '');
-      
-      // API IFData usa filtros OData
-      const filter = `CNPJ eq '${cleanCNPJ}' and DataBase eq datetime'${dataBase}'`;
-      const url = `${this.BASE_URL}/Instituicoes?$filter=${encodeURIComponent(filter)}&$format=json`;
-      
-      console.log(`[BCB API] Buscando dados: ${cnpj} em ${dataBase}`);
-      
-      const response = await fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        console.warn(`[BCB API] ⚠️  HTTP ${response.status} para ${cnpj}`);
-        return null;
-      }
-
-      const data: IFDataResponse = await response.json();
-      
-      if (data.value.length === 0) {
-        console.warn(`[BCB API] ⚠️  Sem dados para ${cnpj} em ${dataBase}`);
-        return null;
-      }
-
-      console.log(`[BCB API] ✅ Dados encontrados para ${data.value[0].NomeInstituicao}`);
-      
-      return data.value[0];
-      
-    } catch (error) {
-      console.error(`[BCB API] ❌ Erro ao buscar ${cnpj}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Busca dados de todos os bancos monitorados
-   * 
-   * NOTA: Modo mockado ativo enquanto API BCB não está disponível
-   */
-  async fetchAllBanksData(dataBase?: string): Promise<BCBBankData[]> {
-    const quarter = dataBase ? { date: dataBase } as QuarterData : this.getLatestAvailableQuarter();
-    
-    console.log(`\n[BCB API] 📊 Iniciando coleta de dados`);
-    console.log(`[BCB API] 📅 Data-base: ${quarter.date}`);
-    console.log(`[BCB API] 🏦 Bancos monitorados: ${Object.keys(this.TRACKED_BANKS).length}`);
-    console.log(`[BCB API] ⚠️  MODO MOCKADO - dados realistas simulados`);
-    console.log('─'.repeat(60));
-    
-    // TODO: Substituir por chamadas reais à API quando disponível
-    const results = this.getMockBanksData(quarter.date);
-    
-    console.log('─'.repeat(60));
-    console.log(`[BCB API] ✅ Coleta finalizada: ${results.length}/${Object.keys(this.TRACKED_BANKS).length} bancos\n`);
-    
-    return results;
-  }
-
-  /**
-   * Retorna dados mockados realistas baseados no padrão dos dados de produção
-   * TODO: Remover quando API real estiver disponível
-   */
-  private getMockBanksData(dataBase: string): BCBBankData[] {
-    return [
-      {
-        cnpj: '18236120000158',
-        nome: 'Nu Pagamentos S.A.',
-        segmento: 'S1',
-        basileia: 18.5,
-        tier1: 16.2,
-        cet1: 15.8,
-        alavancagem: 8.5,
-        patrimonioLiquido: 25000000000,
-        ativoTotal: 180000000000,
-        totalDeposits: 120000000000,
-        loanPortfolio: 95000000000,
-        roe: 22.5,
-        roa: 3.1,
-        nim: 8.2,
-        costToIncome: 35.0,
-        lcr: 185.0,
-        nsfr: 145.0,
-        liquidez: 95.0,
-        loanToDeposit: 79.2,
-        inadimplencia: 5.2,
-        coverageRatio: 180.0,
-        writeOffRate: 2.1,
-        creditQuality: 48.0,
-      },
-      {
-        cnpj: '60701190000104',
-        nome: 'Itaú Unibanco S.A.',
-        segmento: 'S1',
-        basileia: 17.2,
-        tier1: 14.8,
-        cet1: 13.5,
-        patrimonioLiquido: 128000000000,
-        ativoTotal: 2150000000000,
-        totalDeposits: 1250000000000,
-        loanPortfolio: 950000000000,
-        roe: 18.5,
-        roa: 1.8,
-        nim: 6.5,
-        costToIncome: 42.0,
-        lcr: 165.0,
-        nsfr: 128.0,
-        inadimplencia: 3.8,
-        coverageRatio: 195.0,
-      },
-      {
-        cnpj: '00000000000191',
-        nome: 'Banco do Brasil S.A.',
-        segmento: 'S1',
-        basileia: 16.8,
-        tier1: 13.2,
-        cet1: 12.0,
-        patrimonioLiquido: 115000000000,
-        ativoTotal: 1980000000000,
-        totalDeposits: 1180000000000,
-        loanPortfolio: 890000000000,
-        roe: 16.2,
-        roa: 1.5,
-        inadimplencia: 3.5,
-        lcr: 155.0,
-      },
-      {
-        cnpj: '60746948000112',
-        nome: 'Banco Bradesco S.A.',
-        segmento: 'S1',
-        basileia: 16.5,
-        tier1: 13.8,
-        patrimonioLiquido: 122000000000,
-        ativoTotal: 1875000000000,
-        totalDeposits: 1150000000000,
-        loanPortfolio: 865000000000,
-        roe: 17.8,
-        roa: 1.6,
-        inadimplencia: 3.9,
-        lcr: 158.0,
-      },
-      {
-        cnpj: '00360305000104',
-        nome: 'Caixa Econômica Federal',
-        segmento: 'S1',
-        basileia: 15.2,
-        tier1: 12.5,
-        patrimonioLiquido: 85000000000,
-        ativoTotal: 1650000000000,
-        totalDeposits: 980000000000,
-        loanPortfolio: 750000000000,
-        roe: 14.5,
-        roa: 1.2,
-        inadimplencia: 4.2,
-        lcr: 145.0,
-      },
-      {
-        cnpj: '90400888000142',
-        nome: 'Banco Santander (Brasil) S.A.',
-        segmento: 'S1',
-        basileia: 16.8,
-        tier1: 14.2,
-        patrimonioLiquido: 98000000000,
-        ativoTotal: 1520000000000,
-        totalDeposits: 920000000000,
-        loanPortfolio: 715000000000,
-        roe: 17.2,
-        roa: 1.6,
-        inadimplencia: 3.7,
-        lcr: 162.0,
-      },
-      {
-        cnpj: '00416968000101',
-        nome: 'Banco Inter S.A.',
-        segmento: 'S2',
-        basileia: 19.5,
-        tier1: 17.8,
-        patrimonioLiquido: 8500000000,
-        ativoTotal: 95000000000,
-        totalDeposits: 58000000000,
-        loanPortfolio: 42000000000,
-        roe: 15.8,
-        roa: 2.2,
-        inadimplencia: 4.8,
-        lcr: 195.0,
-      },
-      {
-        cnpj: '31872495000172',
-        nome: 'Banco C6 S.A.',
-        segmento: 'S2',
-        basileia: 22.5,
-        tier1: 20.2,
-        patrimonioLiquido: 7200000000,
-        ativoTotal: 82000000000,
-        totalDeposits: 48000000000,
-        loanPortfolio: 35000000000,
-        roe: 12.5,
-        roa: 1.8,
-        inadimplencia: 4.5,
-        lcr: 225.0,
-      },
-      {
-        cnpj: '30306294000145',
-        nome: 'Banco BTG Pactual S.A.',
-        segmento: 'S2',
-        basileia: 21.8,
-        tier1: 19.5,
-        patrimonioLiquido: 32000000000,
-        ativoTotal: 385000000000,
-        totalDeposits: 185000000000,
-        loanPortfolio: 120000000000,
-        roe: 24.5,
-        roa: 2.8,
-        inadimplencia: 2.8,
-        lcr: 215.0,
-      },
-      {
-        cnpj: '10573521000191',
-        nome: 'PagSeguro Internet S.A.',
-        segmento: 'S3',
-        basileia: 25.2,
-        tier1: 23.5,
-        patrimonioLiquido: 12000000000,
-        ativoTotal: 85000000000,
-        totalDeposits: 42000000000,
-        loanPortfolio: 28000000000,
-        roe: 18.5,
-        roa: 3.2,
-        inadimplencia: 5.5,
-        lcr: 285.0,
-      },
-      {
-        cnpj: '58160789000128',
-        nome: 'Banco Safra S.A.',
-        segmento: 'S2',
-        basileia: 18.5,
-        tier1: 16.2,
-        patrimonioLiquido: 18500000000,
-        ativoTotal: 205000000000,
-        totalDeposits: 125000000000,
-        loanPortfolio: 95000000000,
-        roe: 16.8,
-        roa: 1.9,
-        inadimplencia: 3.2,
-        lcr: 175.0,
-      },
-      {
-        cnpj: '92894922000135',
-        nome: 'Banco Original S.A.',
-        segmento: 'S2',
-        basileia: 17.2,
-        tier1: 15.5,
-        patrimonioLiquido: 5800000000,
-        ativoTotal: 68000000000,
-        totalDeposits: 38000000000,
-        loanPortfolio: 29000000000,
-        roe: 14.2,
-        roa: 1.6,
-        inadimplencia: 4.8,
-        lcr: 165.0,
-      },
-      {
-        cnpj: '74828799000112',
-        nome: 'Banco Next S.A.',
-        segmento: 'S3',
-        basileia: 28.5,
-        tier1: 26.8,
-        patrimonioLiquido: 2200000000,
-        ativoTotal: 18000000000,
-        totalDeposits: 8500000000,
-        loanPortfolio: 5200000000,
-        roe: 8.5,
-        roa: 1.2,
-        inadimplencia: 3.8,
-        lcr: 325.0,
-      },
-      {
-        cnpj: '92874270000160',
-        nome: 'Neon Pagamentos S.A.',
-        segmento: 'S3',
-        basileia: 32.5,
-        tier1: 30.2,
-        patrimonioLiquido: 1800000000,
-        ativoTotal: 12000000000,
-        totalDeposits: 5200000000,
-        loanPortfolio: 2800000000,
-        roe: 6.5,
-        roa: 0.9,
-        inadimplencia: 4.2,
-        lcr: 385.0,
-      },
-    ];
-  }
-
-  /**
-   * Transforma dados da API IFData para nosso formato interno
-   */
-  private transformToOurFormat(data: IFDataInstitution): BCBBankData {
     return {
-      cnpj: data.CNPJ,
-      nome: data.NomeInstituicao,
-      segmento: data.Segmento || 'S1', // Default para Segmento 1
-      
-      // Capital
-      basileia: data.IndiceBasileia,
-      tier1: data.CapitalNivel1,
-      cet1: data.IndiceCET1,
-      alavancagem: data.IndiceAlavancagem,
-      
-      // Patrimônio e Ativos
-      patrimonioLiquido: data.PatrimonioLiquido,
-      ativoTotal: data.AtivoTotal,
-      totalDeposits: data.DepositosTotal,
-      loanPortfolio: data.CarteiraCredito,
-      
-      // Rentabilidade
-      roe: data.ROE,
-      roa: data.ROA,
-      nim: data.MargemFinanceira,
-      costToIncome: data.IndiceEficiencia,
-      
-      // Liquidez
-      lcr: data.IndiceLCR,
-      nsfr: data.IndiceNSFR,
-      liquidez: data.LiquidezImediata,
-      loanToDeposit: data.CarteiraCredito && data.DepositosTotal 
-        ? (data.CarteiraCredito / data.DepositosTotal) * 100 
-        : undefined,
-      
-      // Crédito
-      inadimplencia: data.Inadimplencia90Dias,
-      coverageRatio: data.ProvisionamentoCredito,
-      writeOffRate: data.TaxaWriteOff,
-      creditQuality: data.Inadimplencia90Dias 
-        ? 100 - (data.Inadimplencia90Dias * 10) // Score invertido
-        : undefined,
+      year: currentYear - 1,
+      quarter: 3,
+      date: `${currentYear - 1}-09-30`,
+      availableAfter: new Date(currentYear - 1, 10, 30),
     };
   }
 
-  /**
-   * Testa conexão com a API
-   * 
-   * NOTA: A API IFData do BCB está em desenvolvimento/manutenção.
-   * Por enquanto, usaremos dados mockados realistas enquanto aguardamos
-   * a API estar completamente disponível.
-   */
+  async fetchInstitutionsList(): Promise<string[]> {
+    const anoMes = this.toAnoMes(this.getLatestAvailableQuarter().date);
+    const url = `${this.BASE_URL}/IfDataCadastro(AnoMes=${anoMes})?$select=CodInst,NomeInstituicao&$top=5000&$format=json`;
+    const data = await this.fetchJson<IFDataCadastroRow>(url);
+    return data.value.map((row) => row.CodInst);
+  }
+
+  async fetchInstitutionData(cnpj: string, dataBase?: string): Promise<ResolvedBankReference | null> {
+    const quarterDate = dataBase || this.getLatestAvailableQuarter().date;
+    const anoMes = this.toAnoMes(quarterDate);
+    const trackedEntry = Object.entries(this.TRACKED_BANKS).find(([, config]) => config.cnpj === cnpj);
+    if (trackedEntry) {
+      return this.resolveTrackedBankReference(trackedEntry[0], trackedEntry[1], anoMes);
+    }
+
+    return this.resolveBankReferenceByCnpj(cnpj, anoMes);
+  }
+
+  async fetchAllBanksData(dataBase?: string): Promise<BCBBankData[]> {
+    const quarter = dataBase ? { date: dataBase } as QuarterData : this.getLatestAvailableQuarter();
+    const anoMes = this.toAnoMes(quarter.date);
+
+    console.log(`\n[BCB IFData] Iniciando coleta oficial`);
+    console.log(`[BCB IFData] Data-base: ${quarter.date} (${anoMes})`);
+    console.log(`[BCB IFData] Bancos monitorados: ${Object.keys(this.TRACKED_BANKS).length}`);
+    console.log('-'.repeat(60));
+
+    const cadastroAvailable = await this.isCadastroAvailable(anoMes);
+    if (!cadastroAvailable) {
+      throw new Error(
+        `IfDataCadastro indisponivel para AnoMes=${anoMes} (HTTP 500 no endpoint oficial). `
+        + 'Sem cadastro oficial nao existe vinculo auditavel CNPJ<->CodInst; coleta estrita abortada.',
+      );
+    }
+
+    const results: BCBBankData[] = [];
+
+    for (const [slug, config] of Object.entries(this.TRACKED_BANKS)) {
+      try {
+        const ref = await this.resolveTrackedBankReference(slug, config, anoMes);
+        if (!ref) {
+          console.warn(`[BCB IFData] Sem referencia oficial resolvida para ${slug}`);
+          continue;
+        }
+
+        const rows = await this.fetchValueRows(ref, anoMes, 'T');
+        if (rows.length === 0) {
+          console.warn(`[BCB IFData] Sem valores IFData para ${slug} (${ref.codInst})`);
+          continue;
+        }
+
+        results.push(this.transformToOurFormat(ref, rows, config.label));
+        await this.sleep(120);
+      } catch (error) {
+        console.error(`[BCB IFData] Falha ao processar ${slug}:`, error);
+      }
+    }
+
+    console.log('-'.repeat(60));
+    console.log(`[BCB IFData] Coleta concluida: ${results.length}/${Object.keys(this.TRACKED_BANKS).length} bancos\n`);
+
+    if (results.length === 0) {
+      throw new Error('Nenhum banco retornou dados oficiais verificaveis do IFData.');
+    }
+
+    return results;
+  }
+
   async testConnection(): Promise<boolean> {
     try {
-      console.log('[BCB API] 🔍 Testando conexão...');
-      console.log('[BCB API] ⚠️  API em desenvolvimento - usando dados mockados');
-      
-      // TODO: Descomentar quando API estiver disponível
-      // const url = `${this.BASE_URL}/Instituicoes?$top=1&$format=json`;
-      // const response = await fetch(url, {
-      //   headers: { 'Accept': 'application/json' },
-      // });
-      //
-      // if (!response.ok) {
-      //   throw new Error(`HTTP ${response.status}`);
-      // }
-      //
-      // const data: IFDataResponse = await response.json();
-      // console.log(`[BCB API] ✅ Conexão OK - API retornou ${data.value.length} registro(s)`);
-      
-      console.log(`[BCB API] ✅ Modo mockado ativo`);
-      
+      const serviceDocument = await fetch(`${this.BASE_URL}/`, {
+        headers: { Accept: 'application/json' },
+      });
+
+      if (!serviceDocument.ok) {
+        throw new Error(`HTTP ${serviceDocument.status}`);
+      }
+
+      const listResponse = await fetch(`${this.BASE_URL}/ListaDeRelatorio()?$top=1&$format=json`, {
+        headers: { Accept: 'application/json' },
+      });
+
+      if (!listResponse.ok) {
+        throw new Error(`ListaDeRelatorio HTTP ${listResponse.status}`);
+      }
+
+      const listData: ODataResponse<{ NomeRelatorio: string; NumeroRelatorio: string }> = await listResponse.json();
+      console.log(`[BCB IFData] Conexao OK - ${listData.value.length} relatorio(s) de teste retornado(s)`);
+
+      const anoMes = this.toAnoMes(this.getLatestAvailableQuarter().date);
+      const cadastroAvailable = await this.isCadastroAvailable(anoMes);
+      if (!cadastroAvailable) {
+        console.warn(`[BCB IFData] Aviso: IfDataCadastro indisponivel para AnoMes=${anoMes}`);
+      }
+
       return true;
-      
     } catch (error) {
-      console.error('[BCB API] ❌ Falha na conexão:', error);
+      console.error('[BCB IFData] Falha na conexao:', error);
       return false;
     }
   }
 
-  /**
-   * Busca dados históricos (múltiplos trimestres)
-   */
   async fetchHistoricalData(quarters: number = 6): Promise<Map<string, BCBBankData[]>> {
     const quartersList = this.getLastNQuarters(quarters);
     const historicalData = new Map<string, BCBBankData[]>();
-    
-    console.log(`[BCB API] 📜 Coletando histórico de ${quarters} trimestres`);
-    
+
     for (const quarter of quartersList) {
-      console.log(`\n[BCB API] Trimestre: ${quarter.date}`);
-      const data = await this.fetchAllBanksData(quarter.date);
-      historicalData.set(quarter.date, data);
-      
-      // Delay entre trimestres
+      historicalData.set(quarter.date, await this.fetchAllBanksData(quarter.date));
       await this.sleep(500);
     }
-    
+
     return historicalData;
   }
 
-  /**
-   * Calcula os últimos N trimestres
-   */
+  isDataAvailable(dataBase: string): boolean {
+    const targetDate = new Date(dataBase);
+    const latest = this.getLatestAvailableQuarter();
+    return targetDate <= new Date() && new Date() >= latest.availableAfter;
+  }
+
+  getNextUpdateInfo(): { date: string; daysUntil: number } {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+
+    let nextUpdateDate: Date;
+
+    if (currentMonth < 3) {
+      nextUpdateDate = new Date(now.getFullYear(), 2, 31);
+    } else if (currentMonth < 5) {
+      nextUpdateDate = new Date(now.getFullYear(), 4, 31);
+    } else if (currentMonth < 8) {
+      nextUpdateDate = new Date(now.getFullYear(), 7, 31);
+    } else if (currentMonth < 11) {
+      nextUpdateDate = new Date(now.getFullYear(), 10, 30);
+    } else {
+      nextUpdateDate = new Date(now.getFullYear() + 1, 2, 31);
+    }
+
+    const daysUntil = Math.ceil((nextUpdateDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+      date: nextUpdateDate.toISOString().split('T')[0],
+      daysUntil,
+    };
+  }
+
+  private async resolveTrackedBankReference(
+    slug: string,
+    config: TrackedBankConfig,
+    anoMes: number,
+  ): Promise<ResolvedBankReference | null> {
+    const override = MANUAL_BANK_OVERRIDES[slug];
+    const rows = await this.fetchCadastroRows(
+      anoMes,
+      `contains(NomeInstituicao,'${config.searchTerm}')`,
+      50,
+    ).catch(() => []);
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    const activeRows = rows.filter((row) => row.Situacao === 'A');
+    const candidateRows = activeRows.length > 0 ? activeRows : rows;
+    const preferredByOverride = override
+      ? candidateRows.find((row) => row.CodInst === override.codInst)
+      : null;
+    const prudentialRow = candidateRows.find((row) => row.CodInst === row.CodConglomeradoPrudencial)
+      || candidateRows.find((row) => row.CodInst.startsWith('C'));
+    const namedRow = candidateRows.find((row) => this.normalizeText(row.NomeInstituicao).includes(this.normalizeText(config.searchTerm)));
+    const chosen = preferredByOverride || prudentialRow || namedRow || candidateRows[0];
+
+    return {
+      slug,
+      fullCnpj: config.cnpj,
+      baseCode: this.toBaseCode(config.cnpj),
+      codInst: preferredByOverride?.CodInst || prudentialRow?.CodInst || chosen.CodInst,
+      tipoInstituicao: override?.tipoInstituicao || (prudentialRow ? 1 : 3),
+      name: chosen.NomeInstituicao || config.label,
+      segment: preferredByOverride?.Sr || prudentialRow?.Sr || chosen.Sr || null,
+    };
+  }
+
+  private async resolveBankReferenceByCnpj(
+    fullCnpj: string,
+    anoMes: number,
+    slug = 'bank',
+    label = 'Banco',
+  ): Promise<ResolvedBankReference | null> {
+    const trackedEntry = Object.entries(this.TRACKED_BANKS).find(([, config]) => config.cnpj === fullCnpj);
+    if (trackedEntry) {
+      return this.resolveTrackedBankReference(trackedEntry[0], trackedEntry[1], anoMes);
+    }
+
+    return {
+      slug,
+      fullCnpj,
+      baseCode: this.toBaseCode(fullCnpj),
+      codInst: this.toBaseCode(fullCnpj),
+      tipoInstituicao: 3,
+      name: label,
+      segment: null,
+    };
+  }
+
+  private async fetchCadastroRows(anoMes: number, filter: string, top = 20): Promise<IFDataCadastroRow[]> {
+    const url = `${this.BASE_URL}/IfDataCadastro(AnoMes=${anoMes})?$filter=${encodeURIComponent(filter)}&$top=${top}&$format=json`;
+    const data = await this.fetchJson<IFDataCadastroRow>(url);
+    return data.value;
+  }
+
+  private async isCadastroAvailable(anoMes: number): Promise<boolean> {
+    const url = `${this.BASE_URL}/IfDataCadastro(AnoMes=${anoMes})?$top=1&$format=json`;
+
+    try {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  private async fetchValueRows(
+    reference: ResolvedBankReference,
+    anoMes: number,
+    relatorio: string,
+  ): Promise<IFDataValorRow[]> {
+    const url = `${this.BASE_URL}/IfDataValores(AnoMes=${anoMes},TipoInstituicao=${reference.tipoInstituicao},Relatorio=%27${relatorio}%27)?$filter=${encodeURIComponent(`CodInst eq '${reference.codInst}'`)}&$top=5000&$format=json`;
+    const data = await this.fetchJson<IFDataValorRow>(url);
+    return data.value;
+  }
+
+  private transformToOurFormat(reference: ResolvedBankReference, rows: IFDataValorRow[], fallbackName: string): BCBBankData {
+    const basileia = this.toPercent(this.findValue(rows, ['indice de basileia']));
+    const tier1 = this.toPercent(this.findValue(rows, ['indice de capital nivel i']));
+    const cet1 = this.toPercent(this.findValue(rows, ['indice de capital principal']));
+    const totalAssets = this.findValue(rows, ['ativo total']);
+    const equity = this.findValue(rows, ['patrimonio liquido']);
+    const loanPortfolio = this.findValue(rows, ['carteira de credito classificada']);
+
+    return {
+      cnpj: reference.fullCnpj,
+      nome: fallbackName || reference.name,
+      segmento: reference.segment ?? 'N/A',
+      basileia,
+      tier1,
+      cet1,
+      patrimonioLiquido: equity,
+      ativoTotal: totalAssets,
+      loanPortfolio,
+      alavancagem: undefined,
+      totalDeposits: undefined,
+      roe: undefined,
+      roa: undefined,
+      nim: undefined,
+      costToIncome: undefined,
+      liquidez: undefined,
+      lcr: undefined,
+      nsfr: undefined,
+      loanToDeposit: undefined,
+      inadimplencia: undefined,
+      coverageRatio: undefined,
+      writeOffRate: undefined,
+      creditQuality: undefined,
+    };
+  }
+
+  private findValue(rows: IFDataValorRow[], needles: string[]): number | undefined {
+    const normalizedNeedles = needles.map((needle) => this.normalizeText(needle));
+    const row = rows.find((candidate) => {
+      const normalized = this.normalizeText(candidate.NomeColuna);
+      return normalizedNeedles.some((needle) => normalized.startsWith(needle));
+    });
+
+    return row?.Saldo ?? undefined;
+  }
+
+  private normalizeText(value: string | null | undefined): string {
+    return (value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  private toPercent(value: number | undefined): number | undefined {
+    if (typeof value !== 'number') {
+      return undefined;
+    }
+
+    return value <= 1.5 ? Number((value * 100).toFixed(6)) : value;
+  }
+
+  private toBaseCode(cnpj: string): string {
+    return cnpj.replace(/\D/g, '').slice(0, 8);
+  }
+
+  private toAnoMes(date: string): number {
+    return Number(date.slice(0, 4) + date.slice(5, 7));
+  }
+
+  private async fetchJson<T>(url: string): Promise<ODataResponse<T>> {
+    const response = await fetch(url, {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} for ${url}`);
+    }
+
+    return response.json();
+  }
+
   private getLastNQuarters(n: number): QuarterData[] {
     const quarters: QuarterData[] = [];
     const latest = this.getLatestAvailableQuarter();
-    
+
     let year = latest.year;
     let quarter = latest.quarter;
-    
-    for (let i = 0; i < n; i++) {
-      const month = quarter * 3; // 3, 6, 9, 12
+
+    for (let index = 0; index < n; index++) {
+      const month = quarter * 3;
       const lastDay = quarter === 1 ? 31 : quarter === 2 ? 30 : quarter === 3 ? 30 : 31;
-      
+
       quarters.push({
         year,
         quarter: quarter as 1 | 2 | 3 | 4,
         date: `${year}-${String(month).padStart(2, '0')}-${lastDay}`,
-        availableAfter: new Date() // Não preciso calcular exato para histórico
+        availableAfter: new Date(),
       });
-      
-      // Voltar um trimestre
+
       quarter--;
       if (quarter === 0) {
         quarter = 4;
         year--;
       }
     }
-    
+
     return quarters;
   }
 
-  /**
-   * Helper: Sleep
-   */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Valida se uma data-base está disponível
-   */
-  isDataAvailable(dataBase: string): boolean {
-    const targetDate = new Date(dataBase);
-    const latest = this.getLatestAvailableQuarter();
-    const availableDate = latest.availableAfter;
-    
-    return targetDate <= new Date() && new Date() >= availableDate;
-  }
-
-  /**
-   * Retorna informações sobre o próximo update
-   */
-  getNextUpdateInfo(): { date: string; daysUntil: number } {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    
-    let nextUpdateDate: Date;
-    
-    if (currentMonth < 3) {
-      nextUpdateDate = new Date(now.getFullYear(), 2, 30); // 30 março
-    } else if (currentMonth < 5) {
-      nextUpdateDate = new Date(now.getFullYear(), 4, 25); // 25 maio
-    } else if (currentMonth < 8) {
-      nextUpdateDate = new Date(now.getFullYear(), 7, 25); // 25 agosto
-    } else if (currentMonth < 11) {
-      nextUpdateDate = new Date(now.getFullYear(), 10, 25); // 25 novembro
-    } else {
-      nextUpdateDate = new Date(now.getFullYear() + 1, 2, 30); // 30 março próximo ano
-    }
-    
-    const daysUntil = Math.ceil((nextUpdateDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    return {
-      date: nextUpdateDate.toISOString().split('T')[0],
-      daysUntil
-    };
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
-/**
- * Exporta instância singleton
- */
 export const bcbAPI = new BCBAPIService();

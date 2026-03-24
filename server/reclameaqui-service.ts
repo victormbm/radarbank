@@ -49,26 +49,10 @@ export class ReclameAquiService {
    * Coleta dados de reputação de um banco específico
    */
   async fetchBankReputation(bankSlug: string): Promise<ReclameAquiData | null> {
-    try {
-      // Normalizar o slug para encontrar correspondência
-      const normalizedSlug = this.normalizeBankSlug(bankSlug);
-      const urlSlug = RECLAMEAQUI_BANK_MAP[normalizedSlug];
-      
-      if (!urlSlug) {
-        console.warn(`[ReclameAqui] Banco não mapeado: ${bankSlug} (normalizado: ${normalizedSlug})`);
-        return null;
-      }
-
-      // TODO: Implementar scraping real
-      // const data = await this.scrapeReclameAqui(urlSlug);
-      
-      // Por enquanto, retornar dados mockados baseados em dados reais
-      return this.getMockReputationData(normalizedSlug);
-      
-    } catch (error) {
-      console.error(`[ReclameAqui] Erro ao coletar dados de ${bankSlug}:`, error);
-      return null;
-    }
+    console.warn(
+      `[ReclameAqui] Coleta bloqueada para ${bankSlug}: politica zero-scraping (modo API-only).`,
+    );
+    return null;
   }
 
   /**
