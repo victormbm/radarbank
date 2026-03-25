@@ -44,17 +44,31 @@ export async function GET(request: Request) {
 
       const score = calculateBCBSafetyScore({
         basilRatio: latestSnapshot?.basilRatio,
+        tier1Ratio: latestSnapshot?.tier1Ratio,
+        cet1Ratio: latestSnapshot?.cet1Ratio,
         lcr: latestSnapshot?.lcr,
+        nsfr: latestSnapshot?.nsfr,
         quickLiquidity: latestSnapshot?.quickLiquidity,
         roe: latestSnapshot?.roe,
+        roa: latestSnapshot?.roa,
+        costToIncome: latestSnapshot?.costToIncome,
         nplRatio: latestSnapshot?.nplRatio,
+        coverageRatio: latestSnapshot?.coverageRatio,
+        writeOffRate: latestSnapshot?.writeOffRate,
       });
       const previousScore = calculateBCBSafetyScore({
         basilRatio: previousSnapshot?.basilRatio,
+        tier1Ratio: previousSnapshot?.tier1Ratio,
+        cet1Ratio: previousSnapshot?.cet1Ratio,
         lcr: previousSnapshot?.lcr,
+        nsfr: previousSnapshot?.nsfr,
         quickLiquidity: previousSnapshot?.quickLiquidity,
         roe: previousSnapshot?.roe,
+        roa: previousSnapshot?.roa,
+        costToIncome: previousSnapshot?.costToIncome,
         nplRatio: previousSnapshot?.nplRatio,
+        coverageRatio: previousSnapshot?.coverageRatio,
+        writeOffRate: previousSnapshot?.writeOffRate,
       });
 
       // Calcular tendências
@@ -82,7 +96,7 @@ export async function GET(request: Request) {
         name: bank.name,
         slug: bank.slug,
         cnpj: bank.cnpj,
-        type: bank.type,
+        type: normalizeBankType(bank.type, bank.slug, bank.name),
         country: bank.country,
         segment: bank.segment,
         
@@ -115,10 +129,17 @@ export async function GET(request: Request) {
         bcbSafetyScore: score,
         bcbDataCoverage: getBCBDataCoverage({
           basilRatio: latestSnapshot?.basilRatio,
+          tier1Ratio: latestSnapshot?.tier1Ratio,
+          cet1Ratio: latestSnapshot?.cet1Ratio,
           lcr: latestSnapshot?.lcr,
+          nsfr: latestSnapshot?.nsfr,
           quickLiquidity: latestSnapshot?.quickLiquidity,
           roe: latestSnapshot?.roe,
+          roa: latestSnapshot?.roa,
+          costToIncome: latestSnapshot?.costToIncome,
           nplRatio: latestSnapshot?.nplRatio,
+          coverageRatio: latestSnapshot?.coverageRatio,
+          writeOffRate: latestSnapshot?.writeOffRate,
         }),
         bcbReferenceDate: latestSnapshot?.date || null,
         
@@ -143,7 +164,9 @@ export async function GET(request: Request) {
     const rankedBanks = addRankings(uniqueBanks);
 
     const responseHeaders = new Headers({
-      "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
     });
     for (const [key, value] of Object.entries(rateLimit.headers)) {
       if (typeof value === "string") {
@@ -172,37 +195,90 @@ function clamp(value: number, min: number, max: number) {
  */
 function calculateBCBSafetyScore(metrics: {
   basilRatio?: number | null;
+  tier1Ratio?: number | null;
+  cet1Ratio?: number | null;
   lcr?: number | null;
+  nsfr?: number | null;
   quickLiquidity?: number | null;
   roe?: number | null;
+  roa?: number | null;
+  costToIncome?: number | null;
   nplRatio?: number | null;
+  coverageRatio?: number | null;
+  writeOffRate?: number | null;
 }): number | null {
   const weightedComponents: Array<{ score: number; weight: number }> = [];
 
+  const capitalParts: number[] = [];
   if (typeof metrics.basilRatio === 'number') {
-    const basileiaScore = clamp(((metrics.basilRatio - 11) / (20 - 11)) * 100, 0, 100);
-    weightedComponents.push({ score: basileiaScore, weight: 0.35 });
+    capitalParts.push(clamp(((metrics.basilRatio - 11) / (20 - 11)) * 100, 0, 100));
+  }
+  if (typeof metrics.tier1Ratio === 'number') {
+    capitalParts.push(clamp(((metrics.tier1Ratio - 8.5) / (17 - 8.5)) * 100, 0, 100));
+  }
+  if (typeof metrics.cet1Ratio === 'number') {
+    capitalParts.push(clamp(((metrics.cet1Ratio - 7) / (15 - 7)) * 100, 0, 100));
+  }
+  if (capitalParts.length > 0) {
+    weightedComponents.push({
+      score: capitalParts.reduce((acc, current) => acc + current, 0) / capitalParts.length,
+      weight: 0.35,
+    });
   }
 
+  const liquidityParts: number[] = [];
   if (typeof metrics.lcr === 'number') {
-    const lcrScore = clamp(((metrics.lcr - 100) / (220 - 100)) * 100, 0, 100);
-    weightedComponents.push({ score: lcrScore, weight: 0.25 });
-  } else if (typeof metrics.quickLiquidity === 'number') {
-    const quickLiquidityScore = clamp(((metrics.quickLiquidity - 20) / (100 - 20)) * 100, 0, 100);
-    weightedComponents.push({ score: quickLiquidityScore, weight: 0.25 });
+    liquidityParts.push(clamp(((metrics.lcr - 100) / (220 - 100)) * 100, 0, 100));
+  }
+  if (typeof metrics.quickLiquidity === 'number') {
+    liquidityParts.push(clamp(((metrics.quickLiquidity - 20) / (100 - 20)) * 100, 0, 100));
+  }
+  if (typeof metrics.nsfr === 'number') {
+    liquidityParts.push(clamp(((metrics.nsfr - 100) / (150 - 100)) * 100, 0, 100));
+  }
+  if (liquidityParts.length > 0) {
+    weightedComponents.push({
+      score: liquidityParts.reduce((acc, current) => acc + current, 0) / liquidityParts.length,
+      weight: 0.25,
+    });
   }
 
+  const profitabilityParts: number[] = [];
   if (typeof metrics.roe === 'number') {
-    const roeScore = clamp((metrics.roe / 25) * 100, 0, 100);
-    weightedComponents.push({ score: roeScore, weight: 0.2 });
+    profitabilityParts.push(clamp((metrics.roe / 25) * 100, 0, 100));
+  }
+  if (typeof metrics.roa === 'number') {
+    profitabilityParts.push(clamp((metrics.roa / 2.5) * 100, 0, 100));
+  }
+  if (typeof metrics.costToIncome === 'number') {
+    // Brazilian large banks typically range 50-85%; thresholds adjusted to that reality
+    profitabilityParts.push(clamp(((85 - metrics.costToIncome) / (85 - 45)) * 100, 0, 100));
+  }
+  if (profitabilityParts.length > 0) {
+    weightedComponents.push({
+      score: profitabilityParts.reduce((acc, current) => acc + current, 0) / profitabilityParts.length,
+      weight: 0.2,
+    });
   }
 
+  const creditParts: number[] = [];
   if (typeof metrics.nplRatio === 'number') {
-    const nplScore = clamp(((8 - metrics.nplRatio) / (8 - 1)) * 100, 0, 100);
-    weightedComponents.push({ score: nplScore, weight: 0.2 });
+    creditParts.push(clamp(((8 - metrics.nplRatio) / (8 - 1)) * 100, 0, 100));
+  }
+  if (typeof metrics.coverageRatio === 'number') {
+    creditParts.push(clamp(((metrics.coverageRatio - 80) / (220 - 80)) * 100, 0, 100));
+  }
+  if (typeof metrics.writeOffRate === 'number') {
+    creditParts.push(clamp(((4.5 - metrics.writeOffRate) / (4.5 - 0.5)) * 100, 0, 100));
+  }
+  if (creditParts.length > 0) {
+    weightedComponents.push({
+      score: creditParts.reduce((acc, current) => acc + current, 0) / creditParts.length,
+      weight: 0.2,
+    });
   }
 
-  if (weightedComponents.length < 2) {
+  if (weightedComponents.length === 0) {
     return null;
   }
 
@@ -229,18 +305,23 @@ function scoreStatusFromTotal(totalScore: number | null): 'healthy' | 'watch' | 
 
 function getBCBDataCoverage(metrics: {
   basilRatio?: number | null;
+  tier1Ratio?: number | null;
+  cet1Ratio?: number | null;
   lcr?: number | null;
+  nsfr?: number | null;
   quickLiquidity?: number | null;
   roe?: number | null;
+  roa?: number | null;
+  costToIncome?: number | null;
   nplRatio?: number | null;
+  coverageRatio?: number | null;
+  writeOffRate?: number | null;
 }) {
-  const hasLiquidity = typeof metrics.lcr === 'number' || typeof metrics.quickLiquidity === 'number';
-  const usedMetrics = [
-    typeof metrics.basilRatio === 'number',
-    hasLiquidity,
-    typeof metrics.roe === 'number',
-    typeof metrics.nplRatio === 'number',
-  ].filter(Boolean).length;
+  const hasCapital = typeof metrics.basilRatio === 'number' || typeof metrics.tier1Ratio === 'number' || typeof metrics.cet1Ratio === 'number';
+  const hasLiquidity = typeof metrics.lcr === 'number' || typeof metrics.quickLiquidity === 'number' || typeof metrics.nsfr === 'number';
+  const hasProfitability = typeof metrics.roe === 'number' || typeof metrics.roa === 'number' || typeof metrics.costToIncome === 'number';
+  const hasCredit = typeof metrics.nplRatio === 'number' || typeof metrics.coverageRatio === 'number' || typeof metrics.writeOffRate === 'number';
+  const usedMetrics = [hasCapital, hasLiquidity, hasProfitability, hasCredit].filter(Boolean).length;
 
   return {
     usedMetrics,
@@ -262,31 +343,40 @@ function calculateSegmentStats(banks: any[]) {
     if (!segments[segment]) {
       segments[segment] = {
         count: 0,
+        basileaCount: 0,
+        roeCount: 0,
+        nplCount: 0,
         totalBasilea: 0,
         totalRoe: 0,
         totalNpl: 0,
-        totalScore: 0,
       };
     }
 
     const snapshot = bank.snapshots[0];
-    const score = bank.scores[0];
 
     segments[segment].count++;
-    if (snapshot.basilRatio) segments[segment].totalBasilea += snapshot.basilRatio;
-    if (snapshot.roe) segments[segment].totalRoe += snapshot.roe;
-    if (snapshot.nplRatio) segments[segment].totalNpl += snapshot.nplRatio;
-    if (score) segments[segment].totalScore += score.totalScore;
+    if (typeof snapshot.basilRatio === 'number') {
+      segments[segment].totalBasilea += snapshot.basilRatio;
+      segments[segment].basileaCount++;
+    }
+    if (typeof snapshot.roe === 'number') {
+      segments[segment].totalRoe += snapshot.roe;
+      segments[segment].roeCount++;
+    }
+    if (typeof snapshot.nplRatio === 'number') {
+      segments[segment].totalNpl += snapshot.nplRatio;
+      segments[segment].nplCount++;
+    }
   });
 
   // Calcular médias
   Object.keys(segments).forEach(segment => {
     const stats = segments[segment];
     segments[segment] = {
-      avgBasilea: stats.totalBasilea / stats.count,
-      avgRoe: stats.totalRoe / stats.count,
-      avgNpl: stats.totalNpl / stats.count,
-      avgScore: stats.totalScore / stats.count,
+      avgBasilea: stats.basileaCount > 0 ? stats.totalBasilea / stats.basileaCount : null,
+      avgRoe: stats.roeCount > 0 ? stats.totalRoe / stats.roeCount : null,
+      avgNpl: stats.nplCount > 0 ? stats.totalNpl / stats.nplCount : null,
+      avgScore: null,
     };
   });
 
@@ -345,6 +435,21 @@ function normalizeKey(value: string) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, '');
+}
+
+function normalizeBankType(type: string | null | undefined, slug: string, name: string): 'digital' | 'traditional' {
+  if (type === 'digital' || type === 'traditional') {
+    return type;
+  }
+
+  const visual = getBankVisual({ slug, name });
+  if (visual?.type === 'digital' || visual?.type === 'traditional') {
+    return visual.type;
+  }
+
+  const normalized = `${slug} ${name} ${type ?? ''}`.toLowerCase();
+  const digitalHints = ['nubank', 'neon', 'inter', 'c6', 'next', 'original', 'pagbank', 'nu pagamentos'];
+  return digitalHints.some((hint) => normalized.includes(hint)) ? 'digital' : 'traditional';
 }
 
 /**

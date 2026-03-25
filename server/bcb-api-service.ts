@@ -129,12 +129,14 @@ export class BCBAPIService {
       };
     }
 
-    if (currentMonth > 3 || (currentMonth === 3 && currentDay >= 31)) {
+    // Q4 do ano anterior (Dez 31) fica disponível ~90 dias após o encerramento,
+    // ou seja, a partir de 1º de março do ano seguinte.
+    if (currentMonth >= 3) {
       return {
         year: currentYear - 1,
         quarter: 4,
         date: `${currentYear - 1}-12-31`,
-        availableAfter: new Date(currentYear, 2, 31),
+        availableAfter: new Date(currentYear, 2, 1),
       };
     }
 
@@ -383,9 +385,47 @@ export class BCBAPIService {
     const basileia = this.toPercent(this.findValue(rows, ['indice de basileia']));
     const tier1 = this.toPercent(this.findValue(rows, ['indice de capital nivel i']));
     const cet1 = this.toPercent(this.findValue(rows, ['indice de capital principal']));
+    const alavancagem = this.toPercent(this.findValue(rows, ['razao de alavancagem']));
     const totalAssets = this.findValue(rows, ['ativo total']);
     const equity = this.findValue(rows, ['patrimonio liquido']);
     const loanPortfolio = this.findValue(rows, ['carteira de credito classificada']);
+    const totalDeposits = this.findValue(rows, ['deposito total']);
+
+    // Profitability: derived from P&L items already present in Relatorio='T'
+    const lucroLiquido = this.findValue(rows, ['lucro liquido']);
+    const despPessoal = this.findValue(rows, ['despesas de pessoal']);
+    const despAdmin = this.findValue(rows, ['despesas administrativas']);
+    const disponibilidades = this.findValue(rows, ['disponibilidades']);
+    const depositosVista = this.findValue(rows, ['depositos a vista']);
+    // Pre-tax result — formula works across TipoInstituicao=1 and =3 report formats
+    const preTaskResult = this.findValue(rows, ['resultado antes da tributacao']);
+
+    // ROE (annualised quarterly earnings / equity) — stored in %
+    const roe =
+      typeof lucroLiquido === 'number' && typeof equity === 'number' && equity > 0
+        ? (lucroLiquido / equity) * 4 * 100
+        : undefined;
+
+    // ROA (annualised quarterly earnings / total assets) — stored in %
+    const roa =
+      typeof lucroLiquido === 'number' && typeof totalAssets === 'number' && totalAssets > 0
+        ? (lucroLiquido / totalAssets) * 4 * 100
+        : undefined;
+
+    // Cost-to-Income: opex / (preTaskResult + opex) — bounded formula that works for
+    // both TipoInstituicao=1 (provisions inside NII) and =3 (provisions shown separately)
+    const opex = Math.abs(despPessoal ?? 0) + Math.abs(despAdmin ?? 0);
+    const costToIncome =
+      typeof despPessoal === 'number' && typeof despAdmin === 'number' &&
+      typeof preTaskResult === 'number' && preTaskResult > 0
+        ? (opex / (preTaskResult + opex)) * 100
+        : undefined;
+
+    // Liquidez Imediata: available cash / demand deposits — stored in %
+    const liquidez =
+      typeof disponibilidades === 'number' && typeof depositosVista === 'number' && depositosVista > 0
+        ? (disponibilidades / depositosVista) * 100
+        : undefined;
 
     return {
       cnpj: reference.fullCnpj,
@@ -394,16 +434,16 @@ export class BCBAPIService {
       basileia,
       tier1,
       cet1,
+      alavancagem,
       patrimonioLiquido: equity,
       ativoTotal: totalAssets,
       loanPortfolio,
-      alavancagem: undefined,
-      totalDeposits: undefined,
-      roe: undefined,
-      roa: undefined,
+      totalDeposits,
+      roe,
+      roa,
       nim: undefined,
-      costToIncome: undefined,
-      liquidez: undefined,
+      costToIncome,
+      liquidez,
       lcr: undefined,
       nsfr: undefined,
       loanToDeposit: undefined,

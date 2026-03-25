@@ -475,14 +475,34 @@ async function main() {
   console.log("🏦 Criando bancos com dados realistas...\n");
 
   const now = new Date();
-  const dates = [];
-  
-  // Criar 6 meses de histórico
+
+  // Gerar 6 trimestres históricos usando datas-base oficiais do BCB (fim de trimestre)
+  function lastBCBQuarterEnd(referenceDate: Date): Date {
+    const m = referenceDate.getMonth(); // 0-based
+    // Q4: Dec31, Q3: Sep30, Q2: Jun30, Q1: Mar31
+    if (m >= 9) return new Date(referenceDate.getFullYear(), 11, 31); // Q4 actual year (if Dec)
+    if (m >= 6) return new Date(referenceDate.getFullYear(), 8, 30);  // Q3
+    if (m >= 3) return new Date(referenceDate.getFullYear(), 5, 30);  // Q2
+    return new Date(referenceDate.getFullYear() - 1, 11, 31);        // Q4 prev year
+  }
+
+  function addQuarters(date: Date, n: number): Date {
+    const d = new Date(date);
+    // Recuar n trimestres a partir de uma data fim-de-trimestre
+    d.setMonth(d.getMonth() - n * 3);
+    // Ajustar para o último dia do trimestre resultante
+    const m = d.getMonth();
+    if (m === 11) { d.setDate(31); }
+    else if (m === 8) { d.setDate(30); }
+    else if (m === 5) { d.setDate(30); }
+    else if (m === 2) { d.setDate(31); }
+    return d;
+  }
+
+  const latestQuarter = lastBCBQuarterEnd(now);
+  const dates: Date[] = [];
   for (let i = 0; i < 6; i++) {
-    const date = new Date(now);
-    date.setMonth(date.getMonth() - i);
-    date.setDate(1); // Primeiro dia do mês
-    dates.push(date);
+    dates.push(addQuarters(latestQuarter, i));
   }
 
   for (const bankData of BANKS_REAL_DATA) {

@@ -168,7 +168,9 @@ export async function GET(
     }
 
     const responseHeaders = new Headers(rateLimitHeaders);
-    responseHeaders.set("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    responseHeaders.set("Pragma", "no-cache");
+    responseHeaders.set("Expires", "0");
 
     return NextResponse.json(payloadResult.data, {
       headers: responseHeaders,
@@ -248,9 +250,10 @@ function computeFallbackScores(
     typeof snapshot.roe === "number" ? clamp((snapshot.roe / 25) * 100, 0, 100) : null;
   const roaComponent =
     typeof snapshot.roa === "number" ? clamp((snapshot.roa / 2.5) * 100, 0, 100) : null;
+  // Mesmos limiares usados em banks/route.ts (faixa 45-85, realidade dos bancos brasileiros)
   const ctiComponent =
     typeof snapshot.costToIncome === "number"
-      ? clamp(((70 - snapshot.costToIncome) / (70 - 35)) * 100, 0, 100)
+      ? clamp(((85 - snapshot.costToIncome) / (85 - 45)) * 100, 0, 100)
       : null;
   const profitabilityScore = avg([roeComponent, roaComponent, ctiComponent]);
 
@@ -286,13 +289,6 @@ function computeFallbackScores(
 
   const totalScore = weightSum > 0 ? weightedSum / weightSum : null;
   if (totalScore === null) {
-    return null;
-  }
-
-  const availableDomains = [capitalScore, liquidityScore, profitabilityScore, creditScore]
-    .filter((score): score is number => typeof score === "number").length;
-
-  if (availableDomains < 2) {
     return null;
   }
 
