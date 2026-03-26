@@ -113,7 +113,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
                   <StatusIcon className={cn("h-5 w-5 sm:h-6 sm:w-6", statusDisplay.color)} />
                 </div>
                 <div>
-            <CardDescription className="text-xs sm:text-sm">Nota Técnica BCB (0 a 100)</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Score de Solidez Regulatória (0 a 100)</CardDescription>
                   <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold">
                     {totalScore !== null ? totalScore.toFixed(1) : "--"}
                   </CardTitle>
@@ -129,12 +129,19 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-slate-600 mb-3 sm:mb-4">
+            <p className="text-xs text-slate-600 mb-1 sm:mb-2">
               {totalScore === null
-                ? "Pontuacao composta desativada no modo estrito IFData. A tela exibe apenas valores auditados diretamente contra o BCB."
-                : "Esta nota é calculada com indicadores técnicos oficiais do BCB."
+                ? "Score composto indisponível — exibindo apenas indicadores auditados do BCB."
+                : "Mede solidez regulatória com base em 4 dimensões do BCB: Capital (35%), Liquidez (25%), Rentabilidade (20%) e Crédito (20%). Não mede tamanho: bancos varejistas com grandes carteiras de crédito podem ter LCR e NPL mais pressionados, o que reduz o score mesmo sendo instituições sólidas."
               }
             </p>
+            {/* Faixa legend */}
+            <div className="flex flex-wrap gap-2 mb-3 sm:mb-4 text-xs">
+              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa A: 80–100 — Excelente</span>
+              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa B: 65–79 — Adequado</span>
+              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa C: 50–64 — Atenção</span>
+              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa D: 0–49 — Risco</span>
+            </div>
             <div className="relative pt-2">
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div
@@ -173,22 +180,22 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             unit="%"
             min={11}
             ideal={15}
-            description="Mínimo regulatório: 11%"
+            description="Mínimo regulatório BCB: 11%"
             iconColor="text-blue-600"
             iconBg="bg-blue-50"
-            tooltip="Indicador de capital regulatorio. O minimo exigido pelo Banco Central e 11%."
+            tooltip="Índice de Basileia III: razão entre o capital do banco e seus ativos ponderados pelo risco. O BCB exige mínimo de 11%. Acima de 15% é considerado excelente — significa que o banco tem folga de capital para absorver perdas inesperadas sem precisar de socorro externo."
           />
           <MetricCard
             icon={Target}
-            label="ROE"
+            label="ROE (Retorno sobre Patrimônio)"
             value={snapshot?.roe ?? null}
             unit="%"
             min={10}
             ideal={18}
-            description="Retorno sobre patrimônio"
+            description="Lucro líquido ÷ Patrimônio"
             iconColor="text-green-600"
             iconBg="bg-green-50"
-            tooltip="Retorno sobre patrimonio (ROE). Mostra a eficiencia de resultado em relacao ao capital do banco."
+            tooltip="Return on Equity (ROE): quanto o banco gera de lucro para cada R$100 de patrimônio dos acionistas. Acima de 18% é excelente; abaixo de 10% indica ineficiência. Não confundir com tamanho — um banco pequeno pode ter ROE maior que um gigante."
           />
           <MetricCard
             icon={Droplets}
@@ -197,26 +204,26 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             unit="%"
             min={100}
             ideal={130}
-            description={snapshot?.lcr != null ? "Liquidity Coverage Ratio" : "Disponíveis / Depósitos à vista"}
+            description={snapshot?.lcr != null ? "Ativos líquidos ÷ saídas em 30 dias" : "Disponíveis ÷ Depósitos à vista"}
             iconColor="text-cyan-600"
             iconBg="bg-cyan-50"
             tooltip={snapshot?.lcr != null
-              ? "Indicador regulatorio de liquidez de curto prazo (LCR). O minimo exigido pelo BCB e 100%."
-              : "Liquidez Imediata: relacao entre recursos imediatamente disponiveis e depositos a vista. Valores acima de 100% indicam folga de liquidez."
+              ? "Liquidity Coverage Ratio (LCR): mede se o banco tem ativos líquidos suficientes para cobrir todas as saídas de caixa esperadas em 30 dias de estresse. O BCB exige mínimo de 100%. Bancos de investimento (XP, BTG) costumam ter LCR >250% pois emprestam pouco. Bancos varejistas com grandes carteiras de crédito tendem a ter LCR mais baixo — o que penaliza o score de liquidez."
+              : "Liquidez Imediata: recursos disponíveis imediatamente dividido por depósitos à vista. Acima de 100% indica que o banco pode honrar todos os saques imediatos sem vender nenhum ativo."
             }
           />
           <MetricCard
             icon={AlertCircle}
-            label="Inadimplência"
+            label="Inadimplência (NPL)"
             value={snapshot?.nplRatio ?? null}
             unit="%"
             min={5}
             ideal={3}
-            description="NPL — menor é melhor"
+            description="Operações em atraso >90 dias — menor é melhor"
             iconColor="text-orange-600"
             iconBg="bg-orange-50"
             inverse
-            tooltip="Percentual de operacoes com atraso acima de 90 dias (NPL). Valores menores indicam menor inadimplencia."
+            tooltip="Non-Performing Loans (NPL): percentual da carteira de crédito com atraso superior a 90 dias. Abaixo de 3% é excelente; acima de 5% acende um alerta. Bancos com carteira de crédito massiva (varejistas) naturalmente têm NPL maior. Bancos sem crédito varejista (XP, BTG) têm NPL quase zero — o que eleva o score de crédito deles significativamente."
           />
         </div>
       )}
@@ -228,19 +235,64 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
         </div>
       ) : (
         <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <BreakdownCard title="Capital (pontuacao)"       score={scores?.capitalScore       ?? null} color="from-blue-500 to-blue-400" />
-          <BreakdownCard title="Liquidez (pontuacao)"      score={scores?.liquidityScore     ?? null} color="from-cyan-500 to-cyan-400" />
-          <BreakdownCard title="Rentabilidade (pontuacao)" score={scores?.profitabilityScore ?? null} color="from-green-500 to-green-400" />
-          <BreakdownCard title="Credito (pontuacao)"       score={scores?.creditScore        ?? null} color="from-purple-500 to-purple-400" />
+          <BreakdownCard
+            title="Capital"
+            weight="35% do score"
+            description="Basileia, Tier 1, CET1 — capacidade de absorver perdas"
+            score={scores?.capitalScore ?? null}
+            color="from-blue-500 to-blue-400"
+          />
+          <BreakdownCard
+            title="Liquidez"
+            weight="25% do score"
+            description="LCR, NSFR, disponibilidades — capacidade de honrar saques"
+            score={scores?.liquidityScore ?? null}
+            color="from-cyan-500 to-cyan-400"
+          />
+          <BreakdownCard
+            title="Rentabilidade"
+            weight="20% do score"
+            description="ROE, ROA, custo/renda — eficiência operacional"
+            score={scores?.profitabilityScore ?? null}
+            color="from-green-500 to-green-400"
+          />
+          <BreakdownCard
+            title="Crédito"
+            weight="20% do score"
+            description="NPL, cobertura, write-off — qualidade da carteira"
+            score={scores?.creditScore ?? null}
+            color="from-purple-500 to-purple-400"
+          />
         </div>
       )}
 
-      <Card className="border border-slate-200 bg-white/95">
-        <CardContent className="pt-4 sm:pt-5 text-xs sm:text-sm text-slate-600 leading-relaxed">
-          <p>
-            Como ler os dados: os cards de cima (Basileia, ROE, Liquidez e Inadimplencia) sao os valores reais da API do BCB.
-            Os cards de baixo sao notas de 0 a 100 para facilitar comparacao rapida.
-          </p>
+      <Card className="border border-slate-200 bg-slate-50/80">
+        <CardContent className="pt-4 sm:pt-5 space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+          <p className="font-semibold text-slate-700 text-sm">📖 Como interpretar estes dados</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="font-medium text-slate-700 mb-1">Indicadores reais (linha de cima)</p>
+              <p>Basileia, ROE, Liquidez e Inadimplência são os valores brutos reportados ao BCB — exatamente como aparecem nos balanços oficiais. Use estes para comparações técnicas diretas entre bancos.</p>
+            </div>
+            <div>
+              <p className="font-medium text-slate-700 mb-1">Pontuações 0–100 (linha de baixo)</p>
+              <p>Cada dimensão é normalizada numa escala de 0 a 100 para facilitar comparação. Capital 97 não significa 97% — significa que o banco está no topo da escala para aquele indicador.</p>
+            </div>
+            <div>
+              <p className="font-medium text-slate-700 mb-1">Por que grandes bancos pontuam menos?</p>
+              <p>Itaú, Bradesco e Caixa têm carteiras de crédito de R$600–850 bilhões — o que naturalmente eleva o NPL e reduz a liquidez relativa. XP e BTG emprestam pouco, têm LCR acima de 250% e NPL abaixo de 2%, o que eleva o score deles. Isso é correto: o score mede <strong>resistência a choques</strong>, não importância econômica.</p>
+            </div>
+            <div>
+              <p className="font-medium text-slate-700 mb-1">Faixas regulatórias</p>
+              <ul className="space-y-0.5">
+                <li><span className="font-medium text-green-700">Faixa A (80–100):</span> indicadores excelentes, capital e liquidez acima do mínimo</li>
+                <li><span className="font-medium text-yellow-700">Faixa B (65–79):</span> dentro dos parâmetros regulatórios do BCB</li>
+                <li><span className="font-medium text-orange-700">Faixa C (50–64):</span> abaixo do ideal, requer monitoramento</li>
+                <li><span className="font-medium text-red-700">Faixa D (0–49):</span> indicadores preocupantes, alto risco regulatório</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 pt-1 border-t border-slate-200">Fonte: Banco Central do Brasil (BCB/IFData). Dados atualizados trimestralmente.</p>
         </CardContent>
       </Card>
     </div>
@@ -344,23 +396,29 @@ function MetricCard({ icon: Icon, label, value, unit, min, ideal, description, i
 
 interface BreakdownCardProps {
   title: string;
+  weight: string;
+  description: string;
   score: number | null;
   color: string;
 }
 
-function BreakdownCard({ title, score, color }: BreakdownCardProps) {
+function BreakdownCard({ title, weight, description, score, color }: BreakdownCardProps) {
   const hasScore = score !== null && score !== undefined;
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardDescription className="text-xs">{title}</CardDescription>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardDescription className="text-xs font-semibold text-slate-700">{title}</CardDescription>
+          <span className="text-xs text-slate-400 font-medium">{weight}</span>
+        </div>
+        <p className="text-xs text-slate-400 mt-0.5 leading-snug">{description}</p>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           <div className="text-2xl font-bold">
             {hasScore ? score!.toFixed(0) : "--"}
           </div>
-          <p className="text-xs text-slate-500">Escala tecnica de 0 a 100 (nao e %)</p>
+          <p className="text-xs text-slate-400">Nota 0–100 (não é %)</p>
           <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
               className={cn("h-full rounded-full bg-gradient-to-r", hasScore ? color : "from-slate-200 to-slate-200")}
