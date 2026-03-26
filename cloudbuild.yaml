@@ -1,0 +1,76 @@
+# Cloud Build CI/CD — Radar Bank → Cloud Run
+#
+# Substitution variables (defina no trigger do Cloud Build ou passe via --substitutions):
+#   _REGION       ex: southamerica-east1  (São Paulo)
+#   _REPO         nome do repositório no Artifact Registry  ex: radar-bank
+#   _SERVICE      nome do Cloud Run service                 ex: radar-bank
+#   _DB_SECRET    nome do secret no Secret Manager para DATABASE_URL
+#   _JWT_SECRET   nome do secret no Secret Manager para JWT_SECRET
+#   _ADMIN_SECRET nome do secret no Secret Manager para ADMIN_API_KEY
+#   _CRON_SECRET  nome do secret no Secret Manager para CRON_SECRET
+#   _APP_URL      URL pública do app  ex: https://radarbank.com.br
+
+substitutions:
+  _REGION: southamerica-east1
+  _REPO: radar-bank
+  _SERVICE: radar-bank
+  _DB_SECRET: radar-bank-database-url
+  _JWT_SECRET: radar-bank-jwt-secret
+  _ADMIN_SECRET: radar-bank-admin-api-key
+  _CRON_SECRET: radar-bank-cron-secret
+  _APP_URL: https://bancosegurobr.com.br
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # 1. Build da imagem Docker
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build"
+    args:
+      - build
+      - --tag
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$BUILD_ID"
+      - --tag
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:latest"
+      - --cache-from
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:latest"
+      - .
+
+  # 2. Push para o Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push"
+    waitFor: ["build"]
+    args:
+      - push
+      - --all-tags
+      - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE"
+
+  # 3. Deploy no Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy"
+    waitFor: ["push"]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - "$_SERVICE"
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$BUILD_ID
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --min-instances=0
+      - --max-instances=10
+      - --memory=512Mi
+      - --cpu=1
+      - --concurrency=200
+      - --timeout=300s
+      # Variáveis de ambiente públicas
+      - --set-env-vars=NEXT_PUBLIC_APP_URL=$_APP_URL,NODE_ENV=production
+      # Segredos injetados do Secret Manager (mais seguro do que env vars planas)
+      - --set-secrets=DATABASE_URL=$_DB_SECRET:latest,JWT_SECRET=$_JWT_SECRET:latest,ADMIN_API_KEY=$_ADMIN_SECRET:latest,CRON_SECRET=$_CRON_SECRET:latest,UPSTASH_REDIS_REST_URL=radar-bank-redis-url:latest,UPSTASH_REDIS_REST_TOKEN=radar-bank-redis-token:latest
+
+images:
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:$BUILD_ID"
+  - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:latest"

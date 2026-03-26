@@ -16,6 +16,7 @@ async function main() {
         key: "basel_ratio",
         label: "Basel Capital Ratio",
         unit: "%",
+        category: "capital",
       },
     }),
     prisma.metric.create({
@@ -23,6 +24,7 @@ async function main() {
         key: "roe",
         label: "Return on Equity",
         unit: "%",
+        category: "profitability",
       },
     }),
     prisma.metric.create({
@@ -30,6 +32,7 @@ async function main() {
         key: "quick_liquidity",
         label: "Quick Liquidity Ratio",
         unit: "%",
+        category: "liquidity",
       },
     }),
     prisma.metric.create({
@@ -37,6 +40,7 @@ async function main() {
         key: "npl_ratio",
         label: "Non-Performing Loans Ratio",
         unit: "%",
+        category: "credit",
       },
     }),
   ]);

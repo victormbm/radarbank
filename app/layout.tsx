@@ -9,8 +9,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Radar Bank - Monitor de Saúde Bancária",
+  title: "Banco Seguro BR - Monitor de Saúde Bancária",
   description: "Monitoramento em tempo real da saúde dos bancos com alertas inteligentes",
+  icons: {
+    icon: [
+      { url: '/assets/icons/favicon.svg', type: 'image/svg+xml' },
+      { url: '/assets/icons/iconFavicon2.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: '/assets/icons/iconFavicon2.png',
+    shortcut: '/assets/icons/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -20,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         {children}
       </body>
     </html>

@@ -1,0 +1,30 @@
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+node_modules/
+.next/
+out/
+dist/
+
+.git/
+.github/
+.vscode/
+
+logs/
+*.log
+npm-debug.log*
+
+coverage/
+.nyc_output/
+
+# Dev scripts desnecessários na imagem
+scripts/
+temp_repo/
+docs/
+*.md
+
+# Arquivos locais
+.DS_Store
+Thumbs.db

@@ -11,22 +11,28 @@ model Bank {
   id        String      @id @default(cuid())
   name      String
   slug      String      @unique
+  cnpj      String?     @unique
   type      String
   country   String
+  segment   String?     // S1, S2, S3, S4, S5 (classificação BCB)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   metricValues MetricValue[]
   scores    BankScore[]
+  snapshots BankSnapshot[]
+  reputation BankReputation[]
 
   @@map("banks")
 }
 
 model Metric {
-  id     String   @id @default(cuid())
-  key    String   @unique
-  label  String
-  unit   String
-  values MetricValue[]
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  unit        String
+  category    String   // capital, liquidity, profitability, credit, size, growth
+  description String?
+  values      MetricValue[]
 
   @@map("metrics")
 }
@@ -47,14 +53,198 @@ model MetricValue {
 }
 
 model BankScore {
-  id            String   @id @default(cuid())
-  bankId        String
-  date          DateTime
-  totalScore    Float
-  breakdownJson String
-  bank          Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  id                 String   @id @default(cuid())
+  bankId             String
+  date               DateTime // Data de referência dos dados
+  totalScore         Float    // Score geral composto
+  status             String   // Status do banco (healthy, warning, critical)
+  
+  // Scores por dimensão (BCB - peso 60% na nova fórmula)
+  capitalScore       Float
+  liquidityScore     Float
+  profitabilityScore Float
+  creditScore        Float
+  
+  // Novos scores (40% na nova fórmula)
+  reputationScore    Float?   // 25% - Dados do Reclame Aqui
+  sentimentScore     Float?   // 10% - Análise de sentimento
+  marketScore        Float?   // 5% - Dados de mercado/ações
+  
+  createdAt          DateTime @default(now())
+  
+  bank               Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
+  @@unique([bankId, date])
   @@index([bankId])
   @@index([date])
   @@map("bank_scores")
+}
+
+model BankSnapshot {
+  id                String   @id @default(cuid())
+  bankId            String
+  date              DateTime
+  
+  // Capital (Basileia)
+  basilRatio        Float?   // Índice de Basileia
+  tier1Ratio        Float?   // Capital Principal
+  cet1Ratio         Float?   // Common Equity Tier 1
+  leverageRatio     Float?   // Alavancagem
+  
+  // Liquidez
+  lcr               Float?   // Liquidity Coverage Ratio
+  nsfr              Float?   // Net Stable Funding Ratio
+  quickLiquidity    Float?   // Liquidez Imediata
+  loanToDeposit     Float?   // Relação Empréstimos/Depósitos
+  
+  // Rentabilidade
+  roe               Float?   // Return on Equity
+  roa               Float?   // Return on Assets
+  nim               Float?   // Net Interest Margin
+  costToIncome      Float?   // Eficiência Operacional
+  
+  // Qualidade de Crédito
+  nplRatio          Float?   // Inadimplência
+  coverageRatio     Float?   // Taxa de Cobertura
+  writeOffRate      Float?   // Taxa de Baixa
+  creditQuality     Float?   // Índice de Qualidade
+  
+  // Tamanho (em milhões)
+  totalAssets       Float?   // Ativos Totais
+  equity            Float?   // Patrimônio Líquido
+  totalDeposits     Float?   // Depósitos Totais
+  loanPortfolio     Float?   // Carteira de Crédito
+  
+  // Crescimento (%)
+  assetGrowth       Float?   // Crescimento de Ativos YoY
+  loanGrowth        Float?   // Crescimento de Empréstimos YoY
+  depositGrowth     Float?   // Crescimento de Depósitos YoY
+  
+  bank              Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  
+  @@unique([bankId, date])
+  @@index([bankId])
+  @@index([date])
+  @@map("bank_snapshots")
+}
+
+model DataIngestionLog {
+  id            String   @id @default(cuid())
+  source        String   // bcb, cvm, manual
+  status        String   // success, error, partial
+  recordsCount  Int
+  errorMessage  String?  @db.Text
+  metadata      String?  @db.Text
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  
+  @@index([source])
+  @@index([status])
+  @@index([startedAt])
+  @@map("data_ingestion_logs")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String?   // Hash bcrypt (opcional para OAuth)
+  avatar        String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("users")
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model BankReputation {
+  id                String   @id @default(cuid())
+  bankId            String
+  source            String   // reclameaqui, trustpilot, google, etc
+  referenceDate     DateTime @default(now())
+  
+  // Métricas Reclame Aqui
+  reputationScore   Float?   // 0-10
+  resolvedRate      Float?   // % de reclamações resolvidas
+  averageRating     Float?   // Nota média dos consumidores
+  totalComplaints   Int?     // Total de reclamações
+  responseTime      Float?   // Tempo médio de resposta (horas)
+  
+  // Categorias de reclamação (top 5)
+  topComplaint1     String?
+  topComplaint2     String?
+  topComplaint3     String?
+  
+  // Análise de sentimento
+  sentimentScore    Float?   // -1 a +1 (negativo a positivo)
+  
+  // Metadados
+  rawData           String?  @db.Text // JSON com dados brutos
+  lastScraped       DateTime @default(now())
+  
+  bank              Bank     @relation(fields: [bankId], references: [id], onDelete: Cascade)
+  
+  @@unique([bankId, source, referenceDate])
+  @@index([bankId])
+  @@index([source])
+  @@index([referenceDate])
+  @@map("bank_reputation")
+}
+
+model CronExecution {
+  id            String   @id @default(cuid())
+  executedAt    DateTime @default(now())
+  action        String   // "check", "ingest", "score", "full_cycle"
+  status        String   // "success", "skipped", "error"
+  banksProcessed Int?
+  scoresComputed Int?
+  message       String?  @db.Text
+  durationMs    Int?
+  
+  @@index([executedAt])
+  @@index([status])
+  @@map("cron_executions")
 }
