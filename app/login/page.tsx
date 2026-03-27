@@ -144,7 +144,7 @@ export default function LoginPage() {
                     <h3 className="text-sm font-bold text-emerald-300 uppercase tracking-wide">Exclusivo no Brasil</h3>
                   </div>
                   <p className="text-sm text-white font-medium mb-1">Análise Completa de Saúde Bancária</p>
-                  <p className="text-xs text-slate-400">Dados do Banco Central + Experiência de Clientes</p>
+                  <p className="text-xs text-slate-400">Dados oficiais do Banco Central + comparação por porte</p>
                 </div>
               </div>
 
@@ -224,7 +224,7 @@ export default function LoginPage() {
               <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
               <h3 className="text-xs font-bold text-emerald-300 uppercase tracking-wide">Exclusivo no Brasil</h3>
             </div>
-            <p className="text-sm text-white font-medium mb-3">Análise Completa: BCB + Experiência de Clientes</p>
+            <p className="text-sm text-white font-medium mb-3">Análise Técnica com base BCB + rastreabilidade de origem</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white/5 border border-white/10">
                 <div className="p-1.5 rounded-md bg-purple-500/20 border border-purple-500/30">
@@ -236,7 +236,7 @@ export default function LoginPage() {
                 <div className="p-1.5 rounded-md bg-cyan-500/20 border border-cyan-500/30">
                   <Activity className="h-4 w-4 text-cyan-400 shrink-0" />
                 </div>
-                <div className="text-xs text-white font-semibold">45K+ Avaliações</div>
+                <div className="text-xs text-white font-semibold">Comparação por Segmento</div>
               </div>
             </div>
           </div>

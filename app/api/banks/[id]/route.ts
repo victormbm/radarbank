@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { bankDetailResponseSchema, bankRouteParamsSchema } from "@/lib/validation";
+import { computeDetailedScore } from "@/lib/scoring-v2";
+import { buildDynamicScoreBands, scoreStatusFromBands, type DynamicScoreBands } from "@/lib/score-bands";
+import { buildSnapshotProvenance } from "@/lib/data-provenance";
 
 // Sempre buscar dados frescos do banco — sem cache em nenhuma camada
 export const dynamic = 'force-dynamic';
@@ -48,10 +51,6 @@ export async function GET(
           orderBy: { date: "desc" },
           take: 10,
         },
-        reputation: {
-          orderBy: { referenceDate: "desc" },
-          take: 1,
-        },
       },
     });
 
@@ -60,10 +59,71 @@ export async function GET(
     }
 
     const latestSnapshot = bank.snapshots[0] ?? null;
-    const latestReputation = bank.reputation[0] ?? null;
+    const previousSnapshot = bank.snapshots[1] ?? null;
+
+    // Calibração dinâmica usando a amostra atual de scores BCB (mesma base da listagem)
+    const allLatest = await prisma.bank.findMany({
+      include: {
+        snapshots: {
+          orderBy: { date: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    const scoreBands = buildDynamicScoreBands(
+      allLatest
+        .map((b) => b.snapshots[0])
+        .filter((s): s is NonNullable<typeof s> => !!s)
+        .map((s) => computeDetailedScore(s).totalScore)
+    );
+
     const scores = latestSnapshot
-      ? computeFallbackScores(latestSnapshot.date, latestSnapshot)
+      ? computeScoreFromSnapshot(latestSnapshot, previousSnapshot, scoreBands)
       : null;
+
+    // Segment context: rank and avg score among peers in same segment
+    const SEGMENT_LABELS: Record<string, string> = {
+      S1: 'Grandes Bancos (S1)',
+      S2: 'Bancos Médios (S2)',
+      S3: 'Bancos Digitais e Pequenos (S3)',
+      S4: 'Bancos Pequenos (S4)',
+      S5: 'Micro Bancos (S5)',
+    };
+
+    let segmentContext = null;
+    if (bank.segment) {
+      const peers = await prisma.bank.findMany({
+        where: { segment: bank.segment },
+        include: { snapshots: { orderBy: { date: 'desc' }, take: 1 } },
+      });
+
+      const peerScores = peers.map(p => ({
+        id: p.id,
+        score: p.snapshots[0]
+          ? computeScoreFromSnapshot(p.snapshots[0], null, scoreBands)?.totalScore ?? null
+          : null,
+      }));
+
+      const withScore = peerScores.filter((p): p is { id: string; score: number } => typeof p.score === 'number');
+      const sorted = [...withScore].sort((a, b) => b.score - a.score);
+      const rankIdx = sorted.findIndex(p => p.id === bank.id);
+      const avgScore = withScore.length > 0
+        ? Number((withScore.reduce((sum, p) => sum + p.score, 0) / withScore.length).toFixed(2))
+        : null;
+      const thisScore = scores?.totalScore ?? null;
+
+      segmentContext = {
+        segment: bank.segment,
+        segmentLabel: SEGMENT_LABELS[bank.segment] ?? bank.segment,
+        rank: rankIdx >= 0 ? rankIdx + 1 : null,
+        total: sorted.length,
+        avgScore,
+        aboveAverage: typeof thisScore === 'number' && typeof avgScore === 'number'
+          ? thisScore > avgScore
+          : null,
+      };
+    }
 
     // Historical snapshots for charts
     const metrics = bank.snapshots.map((s) => ({
@@ -95,7 +155,6 @@ export async function GET(
       liquidityScore: number;
       profitabilityScore: number;
       creditScore: number;
-      reputationScore: number | null;
       status: string;
     }> = [];
 
@@ -141,18 +200,10 @@ export async function GET(
           }
         : null,
       scores,
-      reputation: latestReputation
-        ? {
-            reputationScore: latestReputation.reputationScore,
-            resolvedRate: latestReputation.resolvedRate,
-            averageRating: latestReputation.averageRating,
-            totalComplaints: latestReputation.totalComplaints,
-            responseTime: latestReputation.responseTime,
-            sentimentScore: latestReputation.sentimentScore,
-          }
-        : null,
       metrics,
       scoreHistory,
+      segmentContext,
+      provenance: latestSnapshot ? buildSnapshotProvenance(latestSnapshot) : null,
     };
 
     const payloadResult = bankDetailResponseSchema.safeParse(payload);
@@ -184,124 +235,50 @@ export async function GET(
   }
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function avg(values: Array<number | null | undefined>): number | null {
-  const valid = values.filter((v): v is number => typeof v === "number");
-  if (valid.length === 0) return null;
-  return valid.reduce((acc, value) => acc + value, 0) / valid.length;
-}
-
-function scoreStatusFromTotal(total: number) {
-  if (total >= 80) return "healthy";
-  if (total >= 65) return "watch";
-  if (total >= 50) return "risk";
-  return "critical";
-}
-
-function computeFallbackScores(
-  referenceDate: Date,
+function computeScoreFromSnapshot(
   snapshot: {
+    date: Date;
     basilRatio: number | null;
     tier1Ratio: number | null;
     cet1Ratio: number | null;
+    leverageRatio: number | null;
     lcr: number | null;
-    quickLiquidity: number | null;
     nsfr: number | null;
+    quickLiquidity: number | null;
+    loanToDeposit: number | null;
     roe: number | null;
     roa: number | null;
+    nim: number | null;
     costToIncome: number | null;
     nplRatio: number | null;
     coverageRatio: number | null;
     writeOffRate: number | null;
-  }
+    creditQuality: number | null;
+    totalAssets: number | null;
+    equity: number | null;
+    totalDeposits: number | null;
+    loanPortfolio: number | null;
+  },
+  previousSnapshot: {
+    basilRatio: number | null;
+    nplRatio: number | null;
+    roe: number | null;
+  } | null,
+  scoreBands: DynamicScoreBands
 ) {
-  const basilComponent =
-    typeof snapshot.basilRatio === "number"
-      ? clamp(((snapshot.basilRatio - 11) / (20 - 11)) * 100, 0, 100)
-      : null;
-  const tier1Component =
-    typeof snapshot.tier1Ratio === "number"
-      ? clamp(((snapshot.tier1Ratio - 8.5) / (17 - 8.5)) * 100, 0, 100)
-      : null;
-  const cet1Component =
-    typeof snapshot.cet1Ratio === "number"
-      ? clamp(((snapshot.cet1Ratio - 7) / (15 - 7)) * 100, 0, 100)
-      : null;
-  const capitalScore = avg([basilComponent, tier1Component, cet1Component]);
-
-  const lcrComponent =
-    typeof snapshot.lcr === "number"
-      ? clamp(((snapshot.lcr - 100) / (220 - 100)) * 100, 0, 100)
-      : null;
-  const quickLiquidityComponent =
-    typeof snapshot.quickLiquidity === "number"
-      ? clamp(((snapshot.quickLiquidity - 20) / (100 - 20)) * 100, 0, 100)
-      : null;
-  const nsfrComponent =
-    typeof snapshot.nsfr === "number"
-      ? clamp(((snapshot.nsfr - 100) / (150 - 100)) * 100, 0, 100)
-      : null;
-  const liquidityScore = avg([lcrComponent, quickLiquidityComponent, nsfrComponent]);
-
-  const roeComponent =
-    typeof snapshot.roe === "number" ? clamp((snapshot.roe / 25) * 100, 0, 100) : null;
-  const roaComponent =
-    typeof snapshot.roa === "number" ? clamp((snapshot.roa / 2.5) * 100, 0, 100) : null;
-  // Mesmos limiares usados em banks/route.ts (faixa 45-85, realidade dos bancos brasileiros)
-  const ctiComponent =
-    typeof snapshot.costToIncome === "number"
-      ? clamp(((85 - snapshot.costToIncome) / (85 - 45)) * 100, 0, 100)
-      : null;
-  const profitabilityScore = avg([roeComponent, roaComponent, ctiComponent]);
-
-  const nplComponent =
-    typeof snapshot.nplRatio === "number"
-      ? clamp(((8 - snapshot.nplRatio) / (8 - 1)) * 100, 0, 100)
-      : null;
-  const coverageComponent =
-    typeof snapshot.coverageRatio === "number"
-      ? clamp(((snapshot.coverageRatio - 80) / (220 - 80)) * 100, 0, 100)
-      : null;
-  const writeOffComponent =
-    typeof snapshot.writeOffRate === "number"
-      ? clamp(((4.5 - snapshot.writeOffRate) / (4.5 - 0.5)) * 100, 0, 100)
-      : null;
-  const creditScore = avg([nplComponent, coverageComponent, writeOffComponent]);
-
-  const weighted: Array<{ score: number | null; weight: number }> = [
-    { score: capitalScore, weight: 35 },
-    { score: liquidityScore, weight: 25 },
-    { score: profitabilityScore, weight: 20 },
-    { score: creditScore, weight: 20 },
-  ];
-
-  let weightSum = 0;
-  let weightedSum = 0;
-  for (const item of weighted) {
-    if (typeof item.score === "number") {
-      weightSum += item.weight;
-      weightedSum += item.score * item.weight;
-    }
-  }
-
-  const totalScore = weightSum > 0 ? weightedSum / weightSum : null;
-  if (totalScore === null) {
-    return null;
-  }
+  const detailed = computeDetailedScore(snapshot, {
+    previousSnapshot,
+  });
 
   return {
-    totalScore: Number(totalScore.toFixed(2)),
-    capitalScore: capitalScore !== null ? Number(capitalScore.toFixed(2)) : null,
-    liquidityScore: liquidityScore !== null ? Number(liquidityScore.toFixed(2)) : null,
-    profitabilityScore: profitabilityScore !== null ? Number(profitabilityScore.toFixed(2)) : null,
-    creditScore: creditScore !== null ? Number(creditScore.toFixed(2)) : null,
-    reputationScore: null,
-    sentimentScore: null,
+    totalScore: detailed.totalScore,
+    capitalScore: detailed.breakdown.capital,
+    liquidityScore: detailed.breakdown.liquidity,
+    profitabilityScore: detailed.breakdown.profitability,
+    creditScore: detailed.breakdown.credit,
+    sizeScore: detailed.breakdown.size,
     marketScore: null,
-    status: scoreStatusFromTotal(totalScore),
-    date: referenceDate.toISOString(),
+    status: scoreStatusFromBands(detailed.totalScore, scoreBands),
+    date: snapshot.date.toISOString(),
   };
 }

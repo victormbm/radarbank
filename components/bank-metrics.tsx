@@ -40,12 +40,7 @@ const DEFAULT_STATUS = {
 
 const getStatusDisplay = (status?: string | null, score?: number | null) => {
   if (status && STATUS_DISPLAY[status]) return STATUS_DISPLAY[status];
-  if (score !== null && score !== undefined) {
-    if (score >= 80) return STATUS_DISPLAY.healthy;
-    if (score >= 65) return STATUS_DISPLAY.watch;
-    if (score >= 50) return STATUS_DISPLAY.risk;
-    return STATUS_DISPLAY.critical;
-  }
+  const _ = score;
   return DEFAULT_STATUS;
 };
 
@@ -57,11 +52,21 @@ interface BankMetricsProps {
   isLoadingDetail?: boolean;
 }
 
+const SEGMENT_LABELS: Record<string, string> = {
+  S1: 'Grandes Bancos',
+  S2: 'Bancos Médios',
+  S3: 'Digitais e Pequenos',
+  S4: 'Bancos Pequenos',
+  S5: 'Micro Bancos',
+};
+
 export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetricsProps) {
   const visualBank = getBankVisual(bank);
 
   const scores   = detail?.scores   ?? null;
   const snapshot = detail?.snapshot ?? null;
+  const segCtx   = detail?.segmentContext ?? null;
+  const provenance = detail?.provenance ?? null;
 
   const totalScore    = scores?.totalScore ?? null;
   const statusDisplay = getStatusDisplay(scores?.status, totalScore);
@@ -85,7 +90,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
               <div>
                 <CardTitle className="text-xl sm:text-2xl lg:text-3xl">{bank.name}</CardTitle>
                 <CardDescription className="text-sm sm:text-base mt-1 sm:mt-2">
-                  {visualBank?.description || "Indicadores financeiros e reputacionais"}
+                  {visualBank?.description || "Indicadores financeiros e regulatórios (BCB)"}
                 </CardDescription>
               </div>
             </div>
@@ -132,16 +137,76 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             <p className="text-xs text-slate-600 mb-1 sm:mb-2">
               {totalScore === null
                 ? "Score composto indisponível — exibindo apenas indicadores auditados do BCB."
-                : "Mede solidez regulatória com base em 4 dimensões do BCB: Capital (35%), Liquidez (25%), Rentabilidade (20%) e Crédito (20%). Não mede tamanho: bancos varejistas com grandes carteiras de crédito podem ter LCR e NPL mais pressionados, o que reduz o score mesmo sendo instituições sólidas."
+                : "Mede solidez regulatória com base em dados do BCB: Capital, Liquidez, Rentabilidade, Crédito e ajuste de porte (ativos/patrimônio/depósitos/carteira)."
               }
+            </p>
+            <p className="text-xs text-slate-500 mb-2 sm:mb-3">
+              Metodologia atual: base principal BCB com comparação justa por segmento/porte (S1-S5) e rastreabilidade por origem.
             </p>
             {/* Faixa legend */}
             <div className="flex flex-wrap gap-2 mb-3 sm:mb-4 text-xs">
-              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa A: 80–100 — Excelente</span>
-              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa B: 65–79 — Adequado</span>
-              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa C: 50–64 — Atenção</span>
-              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa D: 0–49 — Risco</span>
+              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa A: quartil superior da amostra BCB</span>
+              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa B: acima da mediana BCB</span>
+              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa C: entre mediana inferior e quartil inferior</span>
+              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa D: quartil inferior da amostra BCB</span>
             </div>
+            {/* Segment context badge */}
+            {segCtx && (
+              <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
+                <span className="font-medium text-slate-500">Entre os {SEGMENT_LABELS[segCtx.segment] ?? segCtx.segment}:</span>
+                {segCtx.rank !== null && (
+                  <span className={cn(
+                    "px-2.5 py-0.5 rounded-full font-semibold",
+                    segCtx.rank === 1 ? "bg-yellow-100 text-yellow-800" :
+                    segCtx.rank <= 3 ? "bg-amber-100 text-amber-800" :
+                    "bg-slate-100 text-slate-700"
+                  )}>
+                    {segCtx.rank}º de {segCtx.total}
+                  </span>
+                )}
+                {segCtx.aboveAverage !== null && (
+                  <span className={cn(
+                    "px-2.5 py-0.5 rounded-full font-medium",
+                    segCtx.aboveAverage
+                      ? "bg-green-100 text-green-700"
+                      : "bg-orange-100 text-orange-700"
+                  )}>
+                    {segCtx.aboveAverage ? "↑ Acima da média" : "↓ Abaixo da média"}
+                    {segCtx.avgScore !== null && ` do segmento (méd. ${segCtx.avgScore.toFixed(1)})`}
+                  </span>
+                )}
+              </div>
+            )}
+            {provenance && (
+              <div className="mb-3 rounded-lg border border-slate-200 bg-white/80 p-3">
+                <p className="text-xs font-semibold text-slate-700">Confianca da base atual</p>
+                <p className="text-xs text-slate-600 mt-1">
+                  {provenance.summary.confidencePct}% das metricas estao em origem BCB direta/derivada.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">
+                    Direto BCB: {provenance.summary.directCount}
+                  </span>
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
+                    Derivado IFData: {provenance.summary.derivedCount}
+                  </span>
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
+                    Nao estrito: {provenance.summary.nonStrictCount}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
+                    Sem dados: {provenance.summary.missingCount}
+                  </span>
+                </div>
+                {provenance.summary.nonStrictCount > 0 && (
+                  <p className="mt-2 text-[11px] text-amber-700">
+                    Itens em "Nao estrito" podem vir de fontes complementares e nao da extracao IFData estrita.
+                  </p>
+                )}
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Para compliance: em caso de divergencia, prevalece o documento oficial do BCB e demonstracoes financeiras da instituicao.
+                </p>
+              </div>
+            )}
             <div className="relative pt-2">
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div
@@ -230,38 +295,45 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
 
       {/* ── Score Breakdown ── */}
       {isLoadingDetail ? (
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => <MetricSkeleton key={i} />)}
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => <MetricSkeleton key={i} />)}
         </div>
       ) : (
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-5">
           <BreakdownCard
             title="Capital"
-            weight="35% do score"
+            weight="31% do score"
             description="Basileia, Tier 1, CET1 — capacidade de absorver perdas"
             score={scores?.capitalScore ?? null}
             color="from-blue-500 to-blue-400"
           />
           <BreakdownCard
             title="Liquidez"
-            weight="25% do score"
+            weight="23% do score"
             description="LCR, NSFR, disponibilidades — capacidade de honrar saques"
             score={scores?.liquidityScore ?? null}
             color="from-cyan-500 to-cyan-400"
           />
           <BreakdownCard
             title="Rentabilidade"
-            weight="20% do score"
+            weight="18% do score"
             description="ROE, ROA, custo/renda — eficiência operacional"
             score={scores?.profitabilityScore ?? null}
             color="from-green-500 to-green-400"
           />
           <BreakdownCard
             title="Crédito"
-            weight="20% do score"
+            weight="18% do score"
             description="NPL, cobertura, write-off — qualidade da carteira"
             score={scores?.creditScore ?? null}
             color="from-purple-500 to-purple-400"
+          />
+          <BreakdownCard
+            title="Porte"
+            weight="10% do score"
+            description="Ativos, patrimônio, depósitos e carteira — ajuste proporcional"
+            score={scores?.sizeScore ?? null}
+            color="from-amber-500 to-amber-400"
           />
         </div>
       )}
@@ -279,20 +351,33 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
               <p>Cada dimensão é normalizada numa escala de 0 a 100 para facilitar comparação. Capital 97 não significa 97% — significa que o banco está no topo da escala para aquele indicador.</p>
             </div>
             <div>
-              <p className="font-medium text-slate-700 mb-1">Por que grandes bancos pontuam menos?</p>
-              <p>Itaú, Bradesco e Caixa têm carteiras de crédito de R$600–850 bilhões — o que naturalmente eleva o NPL e reduz a liquidez relativa. XP e BTG emprestam pouco, têm LCR acima de 250% e NPL abaixo de 2%, o que eleva o score deles. Isso é correto: o score mede <strong>resistência a choques</strong>, não importância econômica.</p>
+              <p className="font-medium text-slate-700 mb-1">Por que a comparação mudou?</p>
+              <p>Além dos 4 pilares prudenciais, o cálculo inclui <strong>porte</strong> com base em ativos, patrimônio, depósitos e carteira. Isso reduz distorções entre bancos gigantes de varejo e bancos de nicho, mantendo base principal em dados do BCB.</p>
+            </div>
+            <div>
+              <p className="font-medium text-slate-700 mb-1">Como evitamos comparação injusta?</p>
+              <p>Além do score técnico, mostramos posição dentro do segmento de porte (S1-S5). Assim, o banco é comparado com pares de tamanho semelhante, reduzindo distorções entre gigantes de varejo e bancos de nicho.</p>
             </div>
             <div>
               <p className="font-medium text-slate-700 mb-1">Faixas regulatórias</p>
               <ul className="space-y-0.5">
-                <li><span className="font-medium text-green-700">Faixa A (80–100):</span> indicadores excelentes, capital e liquidez acima do mínimo</li>
-                <li><span className="font-medium text-yellow-700">Faixa B (65–79):</span> dentro dos parâmetros regulatórios do BCB</li>
-                <li><span className="font-medium text-orange-700">Faixa C (50–64):</span> abaixo do ideal, requer monitoramento</li>
-                <li><span className="font-medium text-red-700">Faixa D (0–49):</span> indicadores preocupantes, alto risco regulatório</li>
+                <li><span className="font-medium text-green-700">Faixa A:</span> quartil superior entre bancos da amostra BCB atual</li>
+                <li><span className="font-medium text-yellow-700">Faixa B:</span> acima da mediana e abaixo do quartil superior</li>
+                <li><span className="font-medium text-orange-700">Faixa C:</span> abaixo da mediana e acima do quartil inferior</li>
+                <li><span className="font-medium text-red-700">Faixa D:</span> quartil inferior da amostra (maior atenção relativa)</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-medium text-slate-700 mb-1">Origem dos dados (resguardo legal)</p>
+              <ul className="space-y-0.5">
+                <li><span className="font-medium text-blue-700">BCB Direto:</span> valor extraido diretamente de base oficial do Banco Central.</li>
+                <li><span className="font-medium text-green-700">Derivado IFData:</span> calculado a partir de campos oficiais do IFData.</li>
+                <li><span className="font-medium text-amber-700">Nao estrito:</span> fonte complementar/estimativa quando o campo nao vem no modo estrito.</li>
+                <li><span className="font-medium text-slate-700">Sem dados:</span> metrica nao disponivel na captura atual.</li>
               </ul>
             </div>
           </div>
-          <p className="text-xs text-slate-400 pt-1 border-t border-slate-200">Fonte: Banco Central do Brasil (BCB/IFData). Dados atualizados trimestralmente.</p>
+          <p className="text-xs text-slate-400 pt-1 border-t border-slate-200">Fonte principal: Banco Central do Brasil (BCB/IFData). Quando houver fonte complementar, isso e exibido no rótulo da métrica. Uso informativo; em caso de divergencia, considerar a publicacao oficial mais recente.</p>
         </CardContent>
       </Card>
     </div>

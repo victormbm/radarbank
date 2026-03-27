@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getBankVisual } from "@/lib/brazilian-banks";
+import { computeDetailedScore } from "@/lib/scoring-v2";
+import { buildDynamicScoreBands, scoreStatusFromBands } from "@/lib/score-bands";
 
 // Sempre buscar dados frescos do banco — sem cache em nenhuma camada
 export const dynamic = 'force-dynamic';
@@ -42,34 +44,17 @@ export async function GET(request: Request) {
       const latestSnapshot = bank.snapshots[0];
       const previousSnapshot = bank.snapshots[1];
 
-      const score = calculateBCBSafetyScore({
-        basilRatio: latestSnapshot?.basilRatio,
-        tier1Ratio: latestSnapshot?.tier1Ratio,
-        cet1Ratio: latestSnapshot?.cet1Ratio,
-        lcr: latestSnapshot?.lcr,
-        nsfr: latestSnapshot?.nsfr,
-        quickLiquidity: latestSnapshot?.quickLiquidity,
-        roe: latestSnapshot?.roe,
-        roa: latestSnapshot?.roa,
-        costToIncome: latestSnapshot?.costToIncome,
-        nplRatio: latestSnapshot?.nplRatio,
-        coverageRatio: latestSnapshot?.coverageRatio,
-        writeOffRate: latestSnapshot?.writeOffRate,
-      });
-      const previousScore = calculateBCBSafetyScore({
-        basilRatio: previousSnapshot?.basilRatio,
-        tier1Ratio: previousSnapshot?.tier1Ratio,
-        cet1Ratio: previousSnapshot?.cet1Ratio,
-        lcr: previousSnapshot?.lcr,
-        nsfr: previousSnapshot?.nsfr,
-        quickLiquidity: previousSnapshot?.quickLiquidity,
-        roe: previousSnapshot?.roe,
-        roa: previousSnapshot?.roa,
-        costToIncome: previousSnapshot?.costToIncome,
-        nplRatio: previousSnapshot?.nplRatio,
-        coverageRatio: previousSnapshot?.coverageRatio,
-        writeOffRate: previousSnapshot?.writeOffRate,
-      });
+      const currentScoreData = latestSnapshot
+        ? computeDetailedScore(latestSnapshot, {
+            previousSnapshot: previousSnapshot ?? null,
+          })
+        : null;
+      const previousScoreData = previousSnapshot
+        ? computeDetailedScore(previousSnapshot)
+        : null;
+
+      const score = currentScoreData?.totalScore ?? null;
+      const previousScore = previousScoreData?.totalScore ?? null;
 
       // Calcular tendências
       const scoreTrend = typeof score === 'number' && typeof previousScore === 'number'
@@ -100,18 +85,16 @@ export async function GET(request: Request) {
         country: bank.country,
         segment: bank.segment,
         
-        // Score tecnico estrito usando apenas dados do BCB
-        status: scoreStatusFromTotal(score),
+        // Status definido dinamicamente na amostra BCB atual (aplicado abaixo)
+        status: 'unknown',
         score,
         scoreTrend,
         
-        // Breakdown permanece indisponivel na listagem estrita
-        capitalScore: null,
-        liquidityScore: null,
-        profitabilityScore: null,
-        creditScore: null,
-        reputationScore: null,
-        sentimentScore: null,
+        // Breakdown do motor central
+        capitalScore: currentScoreData?.breakdown.capital ?? null,
+        liquidityScore: currentScoreData?.breakdown.liquidity ?? null,
+        profitabilityScore: currentScoreData?.breakdown.profitability ?? null,
+        creditScore: currentScoreData?.breakdown.credit ?? null,
         marketScore: null,
         
         // Métricas principais
@@ -140,6 +123,10 @@ export async function GET(request: Request) {
           nplRatio: latestSnapshot?.nplRatio,
           coverageRatio: latestSnapshot?.coverageRatio,
           writeOffRate: latestSnapshot?.writeOffRate,
+          totalAssets: latestSnapshot?.totalAssets,
+          equity: latestSnapshot?.equity,
+          totalDeposits: latestSnapshot?.totalDeposits,
+          loanPortfolio: latestSnapshot?.loanPortfolio,
         }),
         bcbReferenceDate: latestSnapshot?.date || null,
         
@@ -160,8 +147,19 @@ export async function GET(request: Request) {
     // Consolidar bancos duplicados (priorizar CNPJ completo)
     const uniqueBanks = consolidateDuplicateBanks(formattedBanks);
 
+    const scoreBands = buildDynamicScoreBands(
+      uniqueBanks
+        .map((bank) => bank.score)
+        .filter((score): score is number => typeof score === 'number')
+    );
+
+    const banksWithDynamicStatus = uniqueBanks.map((bank) => ({
+      ...bank,
+      status: scoreStatusFromBands(bank.score, scoreBands),
+    }));
+
     // Adicionar rankings
-    const rankedBanks = addRankings(uniqueBanks);
+    const rankedBanks = addRankings(banksWithDynamicStatus);
 
     const responseHeaders = new Headers({
       "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -292,17 +290,6 @@ function calculateBCBSafetyScore(metrics: {
   return Number((weightedSum / totalWeight).toFixed(2));
 }
 
-function scoreStatusFromTotal(totalScore: number | null): 'healthy' | 'watch' | 'risk' | 'critical' | 'unknown' {
-  if (typeof totalScore !== 'number') {
-    return 'unknown';
-  }
-
-  if (totalScore >= 80) return 'healthy';
-  if (totalScore >= 65) return 'watch';
-  if (totalScore >= 50) return 'risk';
-  return 'critical';
-}
-
 function getBCBDataCoverage(metrics: {
   basilRatio?: number | null;
   tier1Ratio?: number | null;
@@ -316,17 +303,22 @@ function getBCBDataCoverage(metrics: {
   nplRatio?: number | null;
   coverageRatio?: number | null;
   writeOffRate?: number | null;
+  totalAssets?: number | null;
+  equity?: number | null;
+  totalDeposits?: number | null;
+  loanPortfolio?: number | null;
 }) {
   const hasCapital = typeof metrics.basilRatio === 'number' || typeof metrics.tier1Ratio === 'number' || typeof metrics.cet1Ratio === 'number';
   const hasLiquidity = typeof metrics.lcr === 'number' || typeof metrics.quickLiquidity === 'number' || typeof metrics.nsfr === 'number';
   const hasProfitability = typeof metrics.roe === 'number' || typeof metrics.roa === 'number' || typeof metrics.costToIncome === 'number';
   const hasCredit = typeof metrics.nplRatio === 'number' || typeof metrics.coverageRatio === 'number' || typeof metrics.writeOffRate === 'number';
-  const usedMetrics = [hasCapital, hasLiquidity, hasProfitability, hasCredit].filter(Boolean).length;
+  const hasSize = typeof metrics.totalAssets === 'number' || typeof metrics.equity === 'number' || typeof metrics.totalDeposits === 'number' || typeof metrics.loanPortfolio === 'number';
+  const usedMetrics = [hasCapital, hasLiquidity, hasProfitability, hasCredit, hasSize].filter(Boolean).length;
 
   return {
     usedMetrics,
-    totalMetrics: 4,
-    coveragePct: Number(((usedMetrics / 4) * 100).toFixed(0)),
+    totalMetrics: 5,
+    coveragePct: Number(((usedMetrics / 5) * 100).toFixed(0)),
   };
 }
 
@@ -456,21 +448,45 @@ function normalizeBankType(type: string | null | undefined, slug: string, name: 
  * Adiciona rankings aos bancos
  */
 function addRankings(banks: any[]) {
-  // Ordenar por score de segurança BCB (decrescente)
+  // Ranking global por score BCB
   const sortedByBCBScore = [...banks]
     .filter(b => b.bcbSafetyScore !== null && b.bcbSafetyScore !== undefined)
     .sort((a, b) => (b.bcbSafetyScore || 0) - (a.bcbSafetyScore || 0));
 
-  // Adicionar ranking
+  // Ranking por segmento
+  const segmentGroups: Record<string, any[]> = {};
+  banks.forEach(bank => {
+    const seg = bank.segment || 'outro';
+    if (!segmentGroups[seg]) segmentGroups[seg] = [];
+    segmentGroups[seg].push(bank);
+  });
+
+  const sortedSegments: Record<string, any[]> = {};
+  const segmentAvgScores: Record<string, number | null> = {};
+  Object.entries(segmentGroups).forEach(([seg, segBanks]) => {
+    const withScore = segBanks.filter(b => typeof b.bcbSafetyScore === 'number');
+    sortedSegments[seg] = [...withScore].sort((a, b) => (b.bcbSafetyScore || 0) - (a.bcbSafetyScore || 0));
+    segmentAvgScores[seg] = withScore.length > 0
+      ? Number((withScore.reduce((sum, b) => sum + b.bcbSafetyScore, 0) / withScore.length).toFixed(2))
+      : null;
+  });
+
   return banks.map(bank => {
-    const rankingByBCB = sortedByBCBScore.findIndex(b => b.id === bank.id) + 1;
-    const ranking = rankingByBCB || null;
-    const totalBanks = sortedByBCBScore.length;
-    
+    const globalRankIdx = sortedByBCBScore.findIndex(b => b.id === bank.id);
+    const seg = bank.segment || 'outro';
+    const segBanks = sortedSegments[seg] || [];
+    const segRankIdx = segBanks.findIndex(b => b.id === bank.id);
+
     return {
       ...bank,
-      ranking,
-      totalBanks,
+      ranking: globalRankIdx >= 0 ? globalRankIdx + 1 : null,
+      totalBanks: sortedByBCBScore.length,
+      segmentRank: segRankIdx >= 0 ? segRankIdx + 1 : null,
+      segmentTotal: segBanks.length,
+      segmentAverage: {
+        ...(bank.segmentAverage || {}),
+        avgScore: segmentAvgScores[seg] ?? null,
+      },
       rankingSource: 'bcb',
     };
   });

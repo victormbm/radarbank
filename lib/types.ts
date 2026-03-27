@@ -34,22 +34,30 @@ export interface BankDetailScores {
   liquidityScore: number | null;
   profitabilityScore: number | null;
   creditScore: number | null;
-  reputationScore: number | null;
-  sentimentScore: number | null;
+  sizeScore: number | null;
   marketScore: number | null;
   /** healthy | watch | risk | critical */
   status: string;
   date: string;
 }
 
-/** Reputation data from BankReputation record */
-export interface BankDetailReputation {
-  reputationScore: number | null;
-  resolvedRate: number | null;
-  averageRating: number | null;
-  totalComplaints: number | null;
-  responseTime: number | null;
-  sentimentScore: number | null;
+export interface MetricProvenance {
+  key: string;
+  label: string;
+  tag: "direct_bcb" | "derived_bcb" | "non_strict_source" | "missing";
+  value: number | null;
+}
+
+export interface SnapshotProvenance {
+  metrics: MetricProvenance[];
+  summary: {
+    totalMetrics: number;
+    directCount: number;
+    derivedCount: number;
+    nonStrictCount: number;
+    missingCount: number;
+    confidencePct: number;
+  };
 }
 
 /** Full response from GET /api/banks/[slug] */
@@ -65,7 +73,14 @@ export interface BankDetail {
   };
   snapshot: BankDetailSnapshot | null;
   scores: BankDetailScores | null;
-  reputation: BankDetailReputation | null;
+  segmentContext?: {
+    segment: string;
+    segmentLabel: string;
+    rank: number | null;
+    total: number;
+    avgScore: number | null;
+    aboveAverage: boolean | null;
+  } | null;
   metrics: Array<{
     date: string;
     basilRatio: number | null;
@@ -93,7 +108,7 @@ export interface BankDetail {
     liquidityScore: number;
     profitabilityScore: number;
     creditScore: number;
-    reputationScore: number | null;
     status: string;
   }>;
+  provenance?: SnapshotProvenance | null;
 }

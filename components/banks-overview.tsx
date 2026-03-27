@@ -25,10 +25,11 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
 
   const scores = banks.map(b => b.bcbSafetyScore).filter((score): score is number => typeof score === 'number');
   const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-  const excellentBanks = scores.filter(s => s >= 80).length;
-  const goodBanks = scores.filter(s => s >= 70 && s < 80).length;
-  const attentionBanks = scores.filter(s => s >= 60 && s < 70).length;
-  const criticalBanks = scores.filter(s => s < 60).length;
+  const scoreBands = buildDynamicScoreBands(scores);
+  const excellentBanks = scores.filter(s => classifyScoreBand(s, scoreBands) === 'A').length;
+  const goodBanks = scores.filter(s => classifyScoreBand(s, scoreBands) === 'B').length;
+  const attentionBanks = scores.filter(s => classifyScoreBand(s, scoreBands) === 'C').length;
+  const criticalBanks = scores.filter(s => classifyScoreBand(s, scoreBands) === 'D').length;
 
   const topBanks = banks
     .filter(bank => typeof bank.bcbSafetyScore === 'number')
@@ -58,14 +59,14 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
           value={excellentBanks}
           icon={TrendingUp}
           color="green"
-          description="Indice >= 80"
+          description={`Top 25% da amostra BCB atual (>= ${scoreBands.aMin.toFixed(1)})`}
         />
         <StatCard
           label="Faixa C e D"
           value={attentionBanks + criticalBanks}
           icon={AlertCircle}
           color="orange"
-          description={`${attentionBanks} na faixa C, ${criticalBanks} na faixa D`}
+          description={`${attentionBanks} na faixa C, ${criticalBanks} na faixa D (percentis BCB)`}
         />
       </div>
 
@@ -115,9 +116,15 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
                         <div className="text-xl font-bold">{item.score.toFixed(1)}</div>
                         <div className={cn(
                           "text-xs font-medium",
-                          item.score >= 80 ? "text-green-600" : item.score >= 70 ? "text-blue-600" : "text-amber-600"
+                          classifyScoreBand(item.score, scoreBands) === 'A'
+                            ? "text-green-600"
+                            : classifyScoreBand(item.score, scoreBands) === 'B'
+                              ? "text-blue-600"
+                              : classifyScoreBand(item.score, scoreBands) === 'C'
+                                ? "text-amber-600"
+                                : "text-red-600"
                         )}>
-                          {item.score >= 80 ? "Faixa A" : item.score >= 70 ? "Faixa B" : "Faixa C"}
+                          {`Faixa ${classifyScoreBand(item.score, scoreBands)}`}
                         </div>
                       </div>
                     </>
@@ -170,18 +177,56 @@ export function BanksOverview({ banks, isLoading = false }: BanksOverviewProps) 
           </CardHeader>
           <CardContent>
             <div className="space-y-3 sm:space-y-4">
-              <HealthBar label="Faixa A (>=80)" count={excellentBanks} color="from-green-500 to-green-400" total={Math.max(totalBanks, 1)} />
-              <HealthBar label="Faixa B (70-79)" count={goodBanks} color="from-blue-500 to-blue-400" total={Math.max(totalBanks, 1)} />
-              <HealthBar label="Faixa C (60-69)" count={attentionBanks} color="from-yellow-500 to-yellow-400" total={Math.max(totalBanks, 1)} />
-              {criticalBanks > 0 && (
-                <HealthBar label="Faixa D (<60)" count={criticalBanks} color="from-red-500 to-red-400" total={Math.max(totalBanks, 1)} />
-              )}
+              <HealthBar label={`Faixa A (>= ${scoreBands.aMin.toFixed(1)})`} count={excellentBanks} color="from-green-500 to-green-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label={`Faixa B (${scoreBands.bMin.toFixed(1)} a ${Math.max(scoreBands.aMin - 0.1, scoreBands.bMin).toFixed(1)})`} count={goodBanks} color="from-blue-500 to-blue-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label={`Faixa C (${scoreBands.cMin.toFixed(1)} a ${Math.max(scoreBands.bMin - 0.1, scoreBands.cMin).toFixed(1)})`} count={attentionBanks} color="from-yellow-500 to-yellow-400" total={Math.max(totalBanks, 1)} />
+              <HealthBar label={`Faixa D (< ${scoreBands.cMin.toFixed(1)})`} count={criticalBanks} color="from-red-500 to-red-400" total={Math.max(totalBanks, 1)} />
             </div>
           </CardContent>
         </Card>
       </div>
     </div>
   );
+}
+
+type DynamicBands = {
+  aMin: number;
+  bMin: number;
+  cMin: number;
+};
+
+function percentile(sortedAscending: number[], p: number): number {
+  if (sortedAscending.length === 0) return 0;
+  const index = (sortedAscending.length - 1) * p;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sortedAscending[lower];
+  const weight = index - lower;
+  return sortedAscending[lower] * (1 - weight) + sortedAscending[upper] * weight;
+}
+
+function buildDynamicScoreBands(scores: number[]): DynamicBands {
+  if (scores.length === 0) {
+    return { aMin: 80, bMin: 70, cMin: 60 };
+  }
+
+  const sorted = [...scores].sort((a, b) => a - b);
+  const cMin = percentile(sorted, 0.25);
+  const bMin = percentile(sorted, 0.5);
+  const aMin = percentile(sorted, 0.75);
+
+  return {
+    aMin: Number(aMin.toFixed(2)),
+    bMin: Number(bMin.toFixed(2)),
+    cMin: Number(cMin.toFixed(2)),
+  };
+}
+
+function classifyScoreBand(score: number, bands: DynamicBands): 'A' | 'B' | 'C' | 'D' {
+  if (score >= bands.aMin) return 'A';
+  if (score >= bands.bMin) return 'B';
+  if (score >= bands.cMin) return 'C';
+  return 'D';
 }
 
 interface StatCardProps {

@@ -32,24 +32,6 @@ export async function computeBankScore(bankId: string, date: Date = new Date()) 
     throw new Error(`Nenhum snapshot encontrado para banco ${bankId}`);
   }
 
-  // Buscar reputação mais recente até a data do snapshot
-  const reputations = await prisma.bankReputation.findMany({
-    where: {
-      bankId,
-      source: "reclameaqui",
-      referenceDate: {
-        lte: snapshot.date,
-      },
-    },
-    orderBy: {
-      referenceDate: "desc",
-    },
-    take: 2,
-  });
-
-  const latestReputation = reputations[0] || null;
-  const previousReputation = reputations[1] || null;
-
   const marketSignal = await marketStressService.getMarketSignal(
     bank.slug,
     bank.type as "digital" | "traditional"
@@ -57,25 +39,12 @@ export async function computeBankScore(bankId: string, date: Date = new Date()) 
 
   const scoringInput = {
     ...snapshot,
-    reputationScore: latestReputation?.reputationScore ?? null,
-    resolvedRate: latestReputation?.resolvedRate ?? null,
-    averageRating: latestReputation?.averageRating ?? null,
-    sentimentScore: latestReputation?.sentimentScore ?? null,
-    totalComplaints: latestReputation?.totalComplaints ?? null,
     stockChange: marketSignal.stockChange30d,
   };
 
   const scoreData = computeDetailedScore(scoringInput, {
     bankType: bank.type as "digital" | "traditional",
     previousSnapshot,
-    previousReputation: previousReputation
-      ? {
-          reputationScore: previousReputation.reputationScore,
-          resolvedRate: previousReputation.resolvedRate,
-          totalComplaints: previousReputation.totalComplaints,
-          sentimentScore: previousReputation.sentimentScore,
-        }
-      : null,
     marketContext: {
       stockChange30d: marketSignal.stockChange30d,
       ibovChange30d: marketSignal.ibovChange30d,
@@ -100,8 +69,6 @@ export async function computeBankScore(bankId: string, date: Date = new Date()) 
       liquidityScore: scoreData.breakdown.liquidity,
       profitabilityScore: scoreData.breakdown.profitability,
       creditScore: scoreData.breakdown.credit,
-      reputationScore: scoreData.breakdown.reputation,
-      sentimentScore: scoreData.breakdown.sentiment,
       marketScore: scoreData.breakdown.market,
     },
     create: {
@@ -113,8 +80,6 @@ export async function computeBankScore(bankId: string, date: Date = new Date()) 
       liquidityScore: scoreData.breakdown.liquidity,
       profitabilityScore: scoreData.breakdown.profitability,
       creditScore: scoreData.breakdown.credit,
-      reputationScore: scoreData.breakdown.reputation,
-      sentimentScore: scoreData.breakdown.sentiment,
       marketScore: scoreData.breakdown.market,
     },
   });

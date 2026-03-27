@@ -36,11 +36,13 @@ interface Bank {
   lastDataUpdate?: Date | string;
   ranking?: number | null;
   totalBanks?: number;
+  segmentRank?: number | null;
+  segmentTotal?: number;
   segmentAverage?: {
-    avgBasilea: number;
-    avgRoe: number;
-    avgNpl: number;
-    avgScore: number;
+    avgBasilea?: number | null;
+    avgRoe?: number | null;
+    avgNpl?: number | null;
+    avgScore?: number | null;
   } | null;
 }
 
@@ -89,7 +91,23 @@ export function BanksTable({ banks }: BanksTableProps) {
     return <Badge variant="outline">#{rank}</Badge>;
   };
 
-  const compareWithAverage = (value: number | null | undefined, avg: number | undefined, inverse = false) => {
+  const SEGMENT_SHORT: Record<string, string> = {
+    S1: 'Grandes Bancos',
+    S2: 'Bancos Médios',
+    S3: 'Digitais',
+    S4: 'Pequenos',
+    S5: 'Micro',
+  };
+
+  const getSegmentRankBadge = (segRank: number | null | undefined, segTotal: number | undefined, segment: string | null | undefined) => {
+    if (!segRank || !segTotal || !segment) return null;
+    const label = SEGMENT_SHORT[segment] || segment;
+    if (segRank === 1) return <Badge className="bg-yellow-500 text-xs">1º de {segTotal} em {label}</Badge>;
+    if (segRank <= 3) return <Badge className="bg-amber-400 text-xs">{segRank}º de {segTotal} em {label}</Badge>;
+    return <Badge variant="secondary" className="text-xs">{segRank}º de {segTotal} em {label}</Badge>;
+  };
+
+  const compareWithAverage = (value: number | null | undefined, avg: number | null | undefined, inverse = false) => {
     if (!value || !avg) return null;
     
     const diff = value - avg;
@@ -108,7 +126,7 @@ export function BanksTable({ banks }: BanksTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">Rank</TableHead>
+              <TableHead className="w-[50px]">Rank no Segmento</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Segmento</TableHead>
               <TableHead className="text-right">Score</TableHead>
@@ -123,7 +141,7 @@ export function BanksTable({ banks }: BanksTableProps) {
             {banks.map((bank) => (
               <TableRow key={bank.id} className="hover:bg-muted/50">
                 <TableCell className="font-medium">
-                  {getRankingBadge(bank.ranking, bank.totalBanks)}
+                  {getSegmentRankBadge(bank.segmentRank, bank.segmentTotal, bank.segment)}
                 </TableCell>
                 <TableCell>
                   <Link

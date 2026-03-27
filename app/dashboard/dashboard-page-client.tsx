@@ -253,8 +253,8 @@ export function DashboardPageClient() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-700">
-              <strong>100% BCB:</strong> Basileia, Liquidez, ROE, NPL<br />
-              Métricas financeiras oficiais do Banco Central (IF.data)
+              <strong>Base principal BCB:</strong> Basileia, Liquidez, ROE e NPL<br />
+              Origem sinalizada por indicador: BCB direto, derivado IFData ou complementar
             </p>
           </CardContent>
         </Card>

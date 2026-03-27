@@ -25,47 +25,24 @@ export async function POST(request: Request) {
         bank.type as "digital" | "traditional"
       );
 
-      // Buscar snapshots e reputação para cálculo contextual
+      // Buscar snapshots para cálculo contextual
       const snapshots = await prisma.bankSnapshot.findMany({
         where: { bankId: bank.id },
         orderBy: { date: "desc" },
       });
 
-      const reputations = await prisma.bankReputation.findMany({
-        where: {
-          bankId: bank.id,
-          source: "reclameaqui",
-        },
-        orderBy: { referenceDate: "desc" },
-      });
-
       for (let index = 0; index < snapshots.length; index++) {
         const snapshot = snapshots[index];
         const previousSnapshot = snapshots[index + 1] || null;
-        const latestRep = reputations.find(rep => rep.referenceDate <= snapshot.date) || null;
-        const previousRep = reputations.find(rep => rep.referenceDate < snapshot.date) || null;
 
         const scoringInput = {
           ...snapshot,
-          reputationScore: latestRep?.reputationScore ?? null,
-          resolvedRate: latestRep?.resolvedRate ?? null,
-          averageRating: latestRep?.averageRating ?? null,
-          sentimentScore: latestRep?.sentimentScore ?? null,
-          totalComplaints: latestRep?.totalComplaints ?? null,
           stockChange: marketSignal.stockChange30d,
         };
 
         const scoreData = computeDetailedScore(scoringInput, {
           bankType: bank.type as "digital" | "traditional",
           previousSnapshot,
-          previousReputation: previousRep
-            ? {
-                reputationScore: previousRep.reputationScore,
-                resolvedRate: previousRep.resolvedRate,
-                totalComplaints: previousRep.totalComplaints,
-                sentimentScore: previousRep.sentimentScore,
-              }
-            : null,
           marketContext: {
             stockChange30d: marketSignal.stockChange30d,
             ibovChange30d: marketSignal.ibovChange30d,
@@ -92,8 +69,6 @@ export async function POST(request: Request) {
               liquidityScore: scoreData.breakdown.liquidity,
               profitabilityScore: scoreData.breakdown.profitability,
               creditScore: scoreData.breakdown.credit,
-              reputationScore: scoreData.breakdown.reputation,
-              sentimentScore: scoreData.breakdown.sentiment,
               marketScore: scoreData.breakdown.market,
               status: scoreData.status,
             },
@@ -108,8 +83,6 @@ export async function POST(request: Request) {
               liquidityScore: scoreData.breakdown.liquidity,
               profitabilityScore: scoreData.breakdown.profitability,
               creditScore: scoreData.breakdown.credit,
-              reputationScore: scoreData.breakdown.reputation,
-              sentimentScore: scoreData.breakdown.sentiment,
               marketScore: scoreData.breakdown.market,
               status: scoreData.status,
             },

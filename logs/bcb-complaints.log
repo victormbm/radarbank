@@ -54,3 +54,59 @@
   Fonte: Banco Central do Brasil – dados de domínio público
   Período: 2025 T4
 
+
+═══════════════════════════════════════════════════════════
+  ATUALIZAÇÃO DE RECLAMAÇÕES – BANCO CENTRAL DO BRASIL
+  Fonte: dados abertos/públicos (LAI) – uso legal ✅
+═══════════════════════════════════════════════════════════
+
+📅 Período alvo: 2025 T4
+
+[BCB-REC] Buscando ranking de reclamações 2025 T4...
+[BCB-REC] Fonte: dados abertos BCB (LAI) – uso comercial legal ✅
+[BCB-REC] URL: https://www3.bcb.gov.br/rdrweb/rest/ext/ranking/arquivo?ano=2025&periodicidade=TRIMESTRAL&periodo=4&tipo=Bancos+e+financeiras
+[BCB-REC] ✅ 194 instituições encontradas
+🏦 Bancos no DB: 14
+📊 Instituições do BCB: 194
+
+
+═══════════════════════════════════════════════════════════
+  RESULTADO
+═══════════════════════════════════════════════════════════
+
+  Banco                           Score    Recl.    Índice   Status
+  ──────────────────────────────────────────────────────────────────────
+  BANCO AFINZ BM (conglomerado)   0.7/10   648      213.39   ✅ Salvo
+  BANCO B3 (conglomerado)         10/10    6        0.00     ✅ Salvo
+  BANCO BARI DE INVESTIMENTO E F  0.5/10   157      902.77   ✅ Salvo
+  BANCO C6 (conglomerado)         5.2/10   6703     51.92    ✅ Salvo
+  BANCO CNH INDUSTRIAL CAPITAL S  10/10    22       0.00     ✅ Salvo
+  BANCO DIGIMAIS (conglomerado)   9.8/10   722      1.46     ✅ Salvo
+  BANCO HSBC (conglomerado)       10/10    13       0.00     ✅ Salvo
+  BANCO PAULISTA (conglomerado)   10/10    34       0.00     ✅ Salvo
+  BANCO PLENO (conglomerado)      10/10    81       0.00     ✅ Salvo
+  BANCO PORTO REAL DE INVEST.S.A  10/10    0        0.00     ✅ Salvo
+  BANCO RIBEIRÃO PRETO (conglome  6.6/10   291      33.15    ✅ Salvo
+  BANCO SEMEAR (conglomerado)     10/10    42       0.00     ✅ Salvo
+  BANCO SICOOB (conglomerado)     10/10    1429     0.00     ✅ Salvo
+  BANCO TOPÁZIO S.A. (conglomera  10/10    32       0.00     ✅ Salvo
+  BANCO XCMG BRASIL S.A.          10/10    2        0.00     ✅ Salvo
+  BRADESCO (conglomerado)         5.8/10   34725    43.89    ✅ Salvo
+  BTG PACTUAL/BANCO PAN (conglom  6.6/10   8750     33.67    ✅ Salvo
+  CAIXA ECONÔMICA FEDERAL (congl  8.1/10   20136    17.23    ✅ Salvo
+  CAIXA GERAL (conglomerado)      10/10    101      0.00     ✅ Salvo
+  INTER (conglomerado)            6.1/10   8567     39.23    ✅ Salvo
+  ITAU (conglomerado)             6.4/10   31413    36.24    ✅ Salvo
+  NEON PAGAMENTOS IP (conglomera  6.1/10   2903     39.59    ✅ Salvo
+  NU PAGAMENTOS (conglomerado)    8.6/10   42638    12.04    ✅ Salvo
+  ORIGINAL (conglomerado)         4.1/10   1033     71.72    ✅ Salvo
+  PAGSEGURO (conglomerado)        6.7/10   4962     32.09    ✅ Salvo
+  SAFRA (conglomerado)            1.9/10   2538     132.05   ✅ Salvo
+  SANTANDER (conglomerado)        7.1/10   24300    27.29    ✅ Salvo
+
+  ✅ Bancos atualizados: 27
+  ⚠️  Não identificados: 167
+
+  Fonte: Banco Central do Brasil – dados de domínio público
+  Período: 2025 T4
+

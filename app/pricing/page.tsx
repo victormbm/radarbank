@@ -35,7 +35,7 @@ export default function PricingPage() {
       popular: true,
       features: [
         "Monitore até 3 bancos",
-        "🏆 Score BCB + Reputação Reclame Aqui",
+        "🏆 Score BCB com ajuste por porte",
         "Alertas por EMAIL automáticos",
         "Histórico de 6 meses",
         "Notificação de quedas no score",
@@ -56,8 +56,8 @@ export default function PricingPage() {
       popular: false,
       features: [
         "Bancos ilimitados",
-        "🏆 Análise Dupla: BCB + Reclame Aqui",
-        "📊 Top 3 Categorias de Reclamações",
+        "🏆 Análise técnica BCB com segmentação por porte",
+        "📊 Comparação por pares (S1-S5)",
         "Alertas por WhatsApp",
         "Alertas por Email",
         "Histórico de 24 meses",
@@ -133,18 +133,18 @@ export default function PricingPage() {
                   <div className="text-4xl mb-3">🏛️</div>
                   <h3 className="font-bold text-lg text-slate-900 mb-2">Dados Técnicos BCB</h3>
                   <p className="text-slate-600 text-sm mb-3">
-                    Basileia, ROE, NPL, Liquidez - métricas prudenciais oficiais
+                    Basileia, ROE, NPL, Liquidez e porte - métricas prudenciais oficiais
                   </p>
-                  <div className="text-xs text-emerald-700 font-semibold">60% do Score Final</div>
+                  <div className="text-xs text-emerald-700 font-semibold">100% da metodologia</div>
                 </div>
                 
                 <div className="bg-white/80 rounded-xl p-6 border border-teal-200">
-                  <div className="text-4xl mb-3">⭐</div>
-                  <h3 className="font-bold text-lg text-slate-900 mb-2">Reputação Real</h3>
+                  <div className="text-4xl mb-3">⚖️</div>
+                  <h3 className="font-bold text-lg text-slate-900 mb-2">Comparação Justa por Porte</h3>
                   <p className="text-slate-600 text-sm mb-3">
-                    45.000+ avaliações do Reclame Aqui de clientes reais
+                    Segmentação S1-S5 para evitar distorções entre bancos gigantes e de nicho
                   </p>
-                  <div className="text-xs text-teal-700 font-semibold">25% do Score Final</div>
+                  <div className="text-xs text-teal-700 font-semibold">Ranking contextualizado</div>
                 </div>
               </div>
 
@@ -153,8 +153,8 @@ export default function PricingPage() {
                   💡 O Que Isso Significa Para Você?
                 </p>
                 <p className="text-emerald-50">
-                  Você descobre se seu banco é <strong>tecnicamente sólido</strong> (BCB) <strong>E</strong> se você será <strong>bem atendido</strong> (Reclame Aqui).
-                  Bancos tradicionais só mostram marketing. BCB só mostra números. Nós mostramos a verdade completa.
+                  Você descobre se seu banco é <strong>tecnicamente sólido</strong> com dados oficiais do BCB,
+                  comparado de forma justa com bancos de porte semelhante.
                 </p>
               </div>
             </CardContent>

@@ -19,14 +19,7 @@ export async function GET(request: Request) {
       include: { bank: { select: { name: true } } },
     });
 
-    // 3. Contar reputações
-    const reputationsCount = await prisma.bankReputation.count();
-    const latestReputation = await prisma.bankReputation.findFirst({
-      orderBy: { referenceDate: "desc" },
-      include: { bank: { select: { name: true } } },
-    });
-
-    // 4. Contar scores
+    // 3. Contar scores
     const scoresCount = await prisma.bankScore.count();
     const latestScore = await prisma.bankScore.findFirst({
       orderBy: { date: "desc" },
@@ -43,10 +36,6 @@ export async function GET(request: Request) {
         },
         scores: {
           orderBy: { date: "desc" },
-          take: 1,
-        },
-        reputation: {
-          orderBy: { referenceDate: "desc" },
           take: 1,
         },
       },
@@ -68,19 +57,12 @@ export async function GET(request: Request) {
             status: bank.scores[0].status,
           }
         : null,
-      reputation: bank.reputation[0]
-        ? {
-            date: bank.reputation[0].referenceDate,
-            score: bank.reputation[0].reputationScore,
-          }
-        : null,
     }));
 
     return NextResponse.json({
       counts: {
         banks: banksCount,
         snapshots: snapshotsCount,
-        reputations: reputationsCount,
         scores: scoresCount,
       },
       latest: {
@@ -88,13 +70,6 @@ export async function GET(request: Request) {
           ? {
               bank: latestSnapshot.bank.name,
               date: latestSnapshot.date,
-            }
-          : null,
-        reputation: latestReputation
-          ? {
-              bank: latestReputation.bank.name,
-              date: latestReputation.referenceDate,
-              score: latestReputation.reputationScore,
             }
           : null,
         score: latestScore

@@ -72,20 +72,10 @@ export const bankDetailScoresApiSchema = z.object({
   liquidityScore: nullableFiniteNumber,
   profitabilityScore: nullableFiniteNumber,
   creditScore: nullableFiniteNumber,
-  reputationScore: nullableFiniteNumber,
-  sentimentScore: nullableFiniteNumber,
+  sizeScore: nullableFiniteNumber,
   marketScore: nullableFiniteNumber,
   status: z.string(),
   date: z.string().datetime(),
-});
-
-export const bankDetailReputationApiSchema = z.object({
-  reputationScore: nullableFiniteNumber,
-  resolvedRate: nullableFiniteNumber,
-  averageRating: nullableFiniteNumber,
-  totalComplaints: z.number().int().nonnegative().nullable(),
-  responseTime: nullableFiniteNumber,
-  sentimentScore: nullableFiniteNumber,
 });
 
 export const bankDetailMetricPointApiSchema = z.object({
@@ -116,8 +106,26 @@ export const bankDetailScoreHistoryPointApiSchema = z.object({
   liquidityScore: finiteNumber,
   profitabilityScore: finiteNumber,
   creditScore: finiteNumber,
-  reputationScore: nullableFiniteNumber,
   status: z.string(),
+});
+
+export const metricProvenanceApiSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  tag: z.enum(["direct_bcb", "derived_bcb", "non_strict_source", "missing"]),
+  value: nullableFiniteNumber,
+});
+
+export const snapshotProvenanceApiSchema = z.object({
+  metrics: z.array(metricProvenanceApiSchema),
+  summary: z.object({
+    totalMetrics: z.number().int(),
+    directCount: z.number().int(),
+    derivedCount: z.number().int(),
+    nonStrictCount: z.number().int(),
+    missingCount: z.number().int(),
+    confidencePct: z.number().int(),
+  }),
 });
 
 export const bankDetailResponseSchema = z.object({
@@ -134,9 +142,17 @@ export const bankDetailResponseSchema = z.object({
   }),
   snapshot: bankDetailSnapshotApiSchema.nullable(),
   scores: bankDetailScoresApiSchema.nullable(),
-  reputation: bankDetailReputationApiSchema.nullable(),
   metrics: z.array(bankDetailMetricPointApiSchema),
   scoreHistory: z.array(bankDetailScoreHistoryPointApiSchema),
+  segmentContext: z.object({
+    segment: z.string(),
+    segmentLabel: z.string(),
+    rank: z.number().int().nullable(),
+    total: z.number().int(),
+    avgScore: nullableFiniteNumber,
+    aboveAverage: z.boolean().nullable(),
+  }).nullable().optional(),
+  provenance: snapshotProvenanceApiSchema.nullable().optional(),
 });
 
 export type Bank = z.infer<typeof bankSchema>;

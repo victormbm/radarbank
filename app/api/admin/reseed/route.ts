@@ -22,6 +22,17 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
+  // Hard guard: synthetic reseed must never run in production unless explicitly enabled.
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SYNTHETIC_RESEED !== "true") {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Endpoint desabilitado em producao para proteger integridade dos dados BCB.",
+      },
+      { status: 403 }
+    );
+  }
+
   const startTime = Date.now();
 
   try {

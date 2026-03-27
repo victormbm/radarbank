@@ -1,33 +1,53 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BankStatusBadge } from "@/components/bank-status-badge";
 import { ScoreBreakdown } from "@/components/score-breakdown";
-import { MetricsChart } from "@/components/metrics-chart";
-import { mockBanks, mockBankDetails } from "@/lib/mock-data";
 import { formatDateTime } from "@/lib/utils";
+import type { BankDetail } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 async function getBankDetails(id: string) {
-  const bank = mockBanks.find((b) => b.id === id);
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host");
 
-  if (!bank) {
+  if (!host) {
     return null;
   }
 
-  const details = mockBankDetails[id as keyof typeof mockBankDetails];
+  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+  const response = await fetch(`${protocol}://${host}/api/banks/${id}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const data = (await response.json()) as BankDetail;
+
+  if (!data?.bank) {
+    return null;
+  }
 
   return {
-    bank,
-    score: bank.score,
-    breakdown: details?.breakdown ?? null,
-    lastScoreDate: bank.lastScoreDate,
-    metrics: details?.metrics ?? [],
+    bank: data.bank,
+    score: data.scores?.totalScore ?? null,
+    breakdown: data.scores
+      ? {
+          capital: data.scores.capitalScore ?? 0,
+          liquidity: data.scores.liquidityScore ?? 0,
+          profitability: data.scores.profitabilityScore ?? 0,
+          credit: data.scores.creditScore ?? 0,
+        }
+      : null,
+    lastScoreDate: data.scores?.date ?? null,
   };
 }
 
@@ -51,7 +71,7 @@ async function BankDetailsContent({ id }: { id: string }) {
     notFound();
   }
 
-  const { bank, score, breakdown, lastScoreDate, metrics } = data;
+  const { bank, score, breakdown, lastScoreDate } = data;
 
   return (
     <div className="space-y-6">
@@ -74,9 +94,9 @@ async function BankDetailsContent({ id }: { id: string }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="text-5xl font-bold">{score.toFixed(1)}</div>
+              <div className="text-5xl font-bold">{typeof score === "number" ? score.toFixed(1) : "N/A"}</div>
               <div className="flex items-center gap-2">
-                <BankStatusBadge score={score} />
+                {typeof score === "number" ? <BankStatusBadge score={score} /> : null}
               </div>
               {lastScoreDate && (
                 <p className="text-sm text-muted-foreground">
@@ -89,8 +109,6 @@ async function BankDetailsContent({ id }: { id: string }) {
 
         {breakdown && <ScoreBreakdown breakdown={breakdown} />}
       </div>
-
-      {metrics.length > 0 && <MetricsChart metrics={metrics} />}
     </div>
   );
 }

@@ -250,7 +250,7 @@ export function UpdateStatusCard() {
             <div className="text-xs text-slate-500 space-y-1">
               <div>📅 Frequência BCB: Trimestral (~45 dias após fim do trimestre)</div>
               <div>🔄 Verificação: Diária às 2h AM</div>
-              <div>🏦 Fonte: Banco Central do Brasil (IF.data)</div>
+              <div>🏦 Fonte principal: Banco Central do Brasil (IF.data) com rotulagem de origem por métrica</div>
             </div>
           </div>
         </div>

@@ -67,8 +67,6 @@ export interface DashboardBank {
   liquidityScore?: number | null;
   profitabilityScore?: number | null;
   creditScore?: number | null;
-  reputationScore?: number | null;
-  sentimentScore?: number | null;
   marketScore?: number | null;
 
   basilRatio?: number | null;
@@ -87,6 +85,14 @@ export interface DashboardBank {
 
   ranking?: number | null;
   totalBanks?: number;
+  segmentRank?: number | null;
+  segmentTotal?: number;
+  segmentAverage?: {
+    avgBasilea?: number | null;
+    avgRoe?: number | null;
+    avgNpl?: number | null;
+    avgScore?: number | null;
+  } | null;
 }
 
 export const BRAZILIAN_BANKS: BrazilianBank[] = [
