@@ -24,6 +24,18 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const startTime = Date.now();
+  const strictOnly = process.env.BCB_STRICT_ONLY !== 'false';
+
+  if (!strictOnly) {
+    return NextResponse.json(
+      {
+        success: false,
+        action: 'blocked',
+        error: 'Modo estrito desativado no ambiente. Cron bloqueado por politica.',
+      },
+      { status: 503 }
+    );
+  }
   
   // Validar autenticação do CRON (Vercel envia header específico)
   const authHeader = request.headers.get('authorization');

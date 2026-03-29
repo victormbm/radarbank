@@ -36,6 +36,19 @@ export async function GET(request: NextRequest) {
     return auth.response;
   }
 
+  // Guardrail operacional: este endpoint deve rodar apenas em modo estrito auditavel.
+  const strictOnly = process.env.BCB_STRICT_ONLY !== 'false';
+  if (!strictOnly) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Modo estrito desativado no ambiente. Operacao bloqueada por politica.',
+        message: 'Defina BCB_STRICT_ONLY=true para permitir ingestao oficial.',
+      },
+      { status: 503 }
+    );
+  }
+
   const startTime = new Date();
   const stats: IngestionStats = {
     success: false,

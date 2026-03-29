@@ -8,9 +8,13 @@ import { DashboardBank } from "@/lib/brazilian-banks";
 import type { BankDetail } from "@/lib/types";
 import { bankDetailResponseSchema } from "@/lib/validation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdSenseSlot } from "@/components/adsense-slot";
+import { AdSidebarPromo } from "@/components/ad-sidebar-promo";
+import { AdFooterPromo } from "@/components/ad-footer-promo";
 import { Sparkles, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
 const DASHBOARD_REFRESH_MS = 5 * 60 * 1000;
+const ADSENSE_SLOT_DASHBOARD_TOP = process.env.NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP || "";
 
 type IngestStatus = {
   status: "no_data" | "fresh" | "current" | "stale" | "outdated";
@@ -171,16 +175,16 @@ export function DashboardPageClient() {
             <div className="p-2 sm:p-2.5 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl shadow-lg">
               <Sparkles className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
-              Indicadores Bancarios em Tempo Real
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl lg:leading-loose font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
+             Banco Seguro BR
             </h1>
           </div>
           <p className="text-slate-300 text-base sm:text-lg ml-0 sm:ml-14 mt-2">
             Painel informativo com indicadores tecnicos dos principais bancos do Brasil
           </p>
           <div className="ml-0 sm:ml-14 mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-400/40 rounded-full">
-            <span className="text-emerald-300 text-sm sm:text-base font-semibold">Fonte oficial:</span>
-            <span className="text-slate-200 text-sm sm:text-base">Dados tecnicos do Banco Central (IF.data)</span>
+            <span className="text-emerald-300 text-sm sm:text-base font-semibold">Fonte principal:</span>
+            <span className="text-slate-200 text-sm sm:text-base">Dados tecnicos oficiais do Banco Central (IF.data)</span>
           </div>
         </div>
       </div>
@@ -217,26 +221,26 @@ export function DashboardPageClient() {
                 📊 Leitura Tecnica dos Indicadores
               </h3>
               <p className="text-slate-700 text-base sm:text-lg leading-relaxed mb-3">
-                Visualizacao organizada de <strong className="text-emerald-700">dados oficiais do BCB</strong>:
+                Visualizacao organizada de <strong className="text-emerald-700">dados oficiais do BCB</strong>, com origem sinalizada por indicador:
               </p>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="flex items-start gap-2">
                   <span className="text-emerald-600 text-lg">✓</span>
                   <div>
-                    <p className="font-semibold text-slate-900">Dados Técnicos BCB</p>
-                    <p className="text-sm text-slate-600">Basileia, ROE, NPL, Liquidez</p>
+                    <p className="font-semibold text-slate-900">Dados Tecnicos BCB</p>
+                    <p className="text-sm text-slate-600">Basileia, capital, liquidez e rentabilidade por banco</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-emerald-600 text-lg">✓</span>
                   <div>
-                    <p className="font-semibold text-slate-900">Fonte Única Oficial</p>
-                    <p className="text-sm text-slate-600">Banco Central do Brasil (IF.data / dados abertos)</p>
+                    <p className="font-semibold text-slate-900">Metodologia Transparente</p>
+                    <p className="text-sm text-slate-600">Indicadores diretos, derivados e complementares identificados separadamente</p>
                   </div>
                 </div>
               </div>
               <p className="text-sm text-emerald-700 font-medium mt-4 bg-emerald-100/50 px-3 py-2 rounded-lg inline-block">
-                Uso informativo: nao constitui recomendacao financeira, juridica ou regulatoria.
+                Uso informativo: não constitui recomendacao financeira, juridica ou regulatoria.
               </p>
             </div>
           </div>
@@ -253,8 +257,8 @@ export function DashboardPageClient() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-700">
-              <strong>Base principal BCB:</strong> Basileia, Liquidez, ROE e NPL<br />
-              Origem sinalizada por indicador: BCB direto, derivado IFData ou complementar
+              <strong>Base principal BCB:</strong> metricas oficiais do IF.data com trilha de origem por indicador<br />
+              Indicador exibido e interno, com metodologia propria e finalidade informativa
             </p>
           </CardContent>
         </Card>
@@ -268,7 +272,7 @@ export function DashboardPageClient() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-slate-700">
-              Notificações quando métricas técnicas do BCB piorarem
+              Alertas quando houver piora relevante em indicadores tecnicos acompanhados
             </p>
           </CardContent>
         </Card>
@@ -290,6 +294,21 @@ export function DashboardPageClient() {
 
       <BanksOverview banks={banks} isLoading={banks.length === 0} />
 
+      <Card className="border-white/30 bg-white/90 shadow-md backdrop-blur-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs font-medium text-slate-500">Publicidade</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {ADSENSE_SLOT_DASHBOARD_TOP ? (
+            <AdSenseSlot slot={ADSENSE_SLOT_DASHBOARD_TOP} className="min-h-[90px]" />
+          ) : (
+            <div className="flex min-h-[90px] items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 text-xs text-slate-500">
+              Configure NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP para ativar anuncios.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-white/30"></div>
@@ -309,7 +328,15 @@ export function DashboardPageClient() {
 
       {selectedBank ? (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <BankMetrics bank={selectedBank} detail={selectedBankDetail} isLoadingDetail={isLoadingDetail} />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <BankMetrics bank={selectedBank} detail={selectedBankDetail} isLoadingDetail={isLoadingDetail} />
+            </div>
+            <div className="lg:col-span-1">
+              <AdSidebarPromo />
+            </div>
+          </div>
+          <AdFooterPromo />
         </div>
       ) : (
         <Card className="border-dashed border-2 border-white/40 bg-white/95 shadow-md backdrop-blur-sm">
@@ -338,11 +365,14 @@ export function DashboardPageClient() {
           </CardHeader>
           <CardContent>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Dados financeiros coletados e processados a partir das publicações oficiais do
-              Banco Central do Brasil (BCB / IF.data), sem scraping e sem fontes terceiras.
+              Dados coletados com base principal nas publicacoes oficiais do Banco Central do Brasil (BCB / IF.data),
+              com identificacao de origem por indicador (direto, derivado ou complementar, quando aplicavel).
               {selectedBankDetail.scores?.date && (
                 <> Referência: {new Date(selectedBankDetail.scores.date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}.</>
               )}
+            </p>
+            <p className="text-[11px] text-slate-500 mt-2">
+              Este painel nao substitui publicacoes oficiais, demonstracoes financeiras, comunicados ao mercado ou parecer tecnico-juridico.
             </p>
           </CardContent>
         </Card>

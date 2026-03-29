@@ -88,6 +88,21 @@ function Add-SecretVersion {
   }
 }
 
+function Get-SecretLatestValue {
+  param([string]$Name)
+
+  try {
+    $value = gcloud secrets versions access latest --secret=$Name --project=$ProjectId 2>$null
+    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($value)) {
+      return $value.Trim()
+    }
+  } catch {
+    return $null
+  }
+
+  return $null
+}
+
 function Upsert-SchedulerJob {
   param(
     [string]$JobName,
@@ -102,6 +117,7 @@ function Upsert-SchedulerJob {
 
   $schedule = "0 */6 * * *"
   $headers = "Authorization=Bearer $Secret"
+  $timeZone = "America/Sao_Paulo"
 
   $existingJobs = gcloud scheduler jobs list --location=$Region --project=$ProjectId --format="value(name)"
   $jobExists = $existingJobs | Where-Object { $_ -match "(^|/)$JobName$" }
@@ -110,18 +126,30 @@ function Upsert-SchedulerJob {
     gcloud scheduler jobs update http $JobName `
       --location=$Region `
       --schedule="$schedule" `
+      --time-zone="$timeZone" `
       --uri="$TargetUrl" `
-      --http-method=GET `
-      --headers="$headers" `
+      --http-method=POST `
+      --update-headers="$headers" `
+      --attempt-deadline=300s `
+      --min-backoff=30s `
+      --max-backoff=600s `
+      --max-doublings=5 `
+      --max-retry-attempts=3 `
       --project=$ProjectId | Out-Null
   } else {
     Write-Host "[GCP] Creating Cloud Scheduler job: $JobName"
     gcloud scheduler jobs create http $JobName `
       --location=$Region `
       --schedule="$schedule" `
+      --time-zone="$timeZone" `
       --uri="$TargetUrl" `
-      --http-method=GET `
+      --http-method=POST `
       --headers="$headers" `
+      --attempt-deadline=300s `
+      --min-backoff=30s `
+      --max-backoff=600s `
+      --max-doublings=5 `
+      --max-retry-attempts=3 `
       --project=$ProjectId | Out-Null
   }
 }
@@ -135,6 +163,14 @@ $AdminApiKey = if ($AdminApiKey) { $AdminApiKey } else { $env:ADMIN_API_KEY }
 $CronSecret = if ($CronSecret) { $CronSecret } else { $env:CRON_SECRET }
 $UpstashUrl = if ($UpstashUrl) { $UpstashUrl } else { $env:UPSTASH_REDIS_REST_URL }
 $UpstashToken = if ($UpstashToken) { $UpstashToken } else { $env:UPSTASH_REDIS_REST_TOKEN }
+
+# Fallback para segredo já existente no Secret Manager (evita pular scheduler sem necessidade)
+if ([string]::IsNullOrWhiteSpace($CronSecret)) {
+  $CronSecret = Get-SecretLatestValue -Name "radar-bank-cron-secret"
+  if (-not [string]::IsNullOrWhiteSpace($CronSecret)) {
+    Write-Host "[GCP] Reusing existing CRON secret from Secret Manager"
+  }
+}
 
 Write-Host "[1/7] Setting active project"
 gcloud config set project $ProjectId | Out-Null

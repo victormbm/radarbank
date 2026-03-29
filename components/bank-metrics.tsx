@@ -24,11 +24,11 @@ const STATUS_DISPLAY: Record<
   string,
   { label: string; color: string; bgColor: string; icon: typeof CheckCircle2 }
 > = {
-  healthy:  { label: "Faixa A", color: "text-green-600",  bgColor: "bg-green-50",  icon: CheckCircle2 },
-  watch:    { label: "Faixa B", color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
-  warning:  { label: "Faixa B", color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
-  risk:     { label: "Faixa C", color: "text-orange-600", bgColor: "bg-orange-50", icon: AlertCircle },
-  critical: { label: "Faixa D", color: "text-red-600",    bgColor: "bg-red-50",    icon: TrendingDown },
+  healthy:  { label: "Faixa Relativa A", color: "text-green-600",  bgColor: "bg-green-50",  icon: CheckCircle2 },
+  watch:    { label: "Faixa Relativa B", color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
+  warning:  { label: "Faixa Relativa B", color: "text-yellow-600", bgColor: "bg-yellow-50", icon: AlertCircle },
+  risk:     { label: "Faixa Relativa C", color: "text-orange-600", bgColor: "bg-orange-50", icon: AlertCircle },
+  critical: { label: "Faixa Relativa D", color: "text-red-600",    bgColor: "bg-red-50",    icon: TrendingDown },
 };
 
 const DEFAULT_STATUS = {
@@ -118,7 +118,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
                   <StatusIcon className={cn("h-5 w-5 sm:h-6 sm:w-6", statusDisplay.color)} />
                 </div>
                 <div>
-            <CardDescription className="text-xs sm:text-sm">Score de Solidez Regulatória (0 a 100)</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Indicador tecnico composto (0 a 100)</CardDescription>
                   <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold">
                     {totalScore !== null ? totalScore.toFixed(1) : "--"}
                   </CardTitle>
@@ -137,18 +137,18 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
             <p className="text-xs text-slate-600 mb-1 sm:mb-2">
               {totalScore === null
                 ? "Score composto indisponível — exibindo apenas indicadores auditados do BCB."
-                : "Mede solidez regulatória com base em dados do BCB: Capital, Liquidez, Rentabilidade, Crédito e ajuste de porte (ativos/patrimônio/depósitos/carteira)."
+                : "Indicador interno de monitoramento calculado com base principal no BCB/IFData e formulas documentadas quando aplicavel."
               }
             </p>
             <p className="text-xs text-slate-500 mb-2 sm:mb-3">
-              Metodologia atual: base principal BCB com comparação justa por segmento/porte (S1-S5) e rastreabilidade por origem.
+              Nao e classificacao oficial do BCB, nao substitui demonstracoes financeiras e nao constitui recomendacao de investimento, credito, juridica ou regulatoria.
             </p>
             {/* Faixa legend */}
             <div className="flex flex-wrap gap-2 mb-3 sm:mb-4 text-xs">
-              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa A: quartil superior da amostra BCB</span>
-              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa B: acima da mediana BCB</span>
-              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa C: entre mediana inferior e quartil inferior</span>
-              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa D: quartil inferior da amostra BCB</span>
+              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa relativa A: quartil superior da amostra atual</span>
+              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa relativa B: acima da mediana da amostra</span>
+              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa relativa C: entre mediana inferior e quartil inferior</span>
+              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa relativa D: quartil inferior da amostra atual</span>
             </div>
             {/* Segment context badge */}
             {segCtx && (
@@ -203,7 +203,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
                   </p>
                 )}
                 <p className="mt-2 text-[11px] text-slate-500">
-                  Para compliance: em caso de divergencia, prevalece o documento oficial do BCB e demonstracoes financeiras da instituicao.
+                  Em caso de divergencia, prevalecem as publicacoes oficiais do BCB e as demonstracoes financeiras da instituicao.
                 </p>
               </div>
             )}
@@ -316,14 +316,14 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
           />
           <BreakdownCard
             title="Rentabilidade"
-            weight="18% do score"
+            weight="16% do score"
             description="ROE, ROA, custo/renda — eficiência operacional"
             score={scores?.profitabilityScore ?? null}
             color="from-green-500 to-green-400"
           />
           <BreakdownCard
             title="Crédito"
-            weight="18% do score"
+            weight="16% do score"
             description="NPL, cobertura, write-off — qualidade da carteira"
             score={scores?.creditScore ?? null}
             color="from-purple-500 to-purple-400"
@@ -340,44 +340,44 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
 
       <Card className="border border-slate-200 bg-slate-50/80">
         <CardContent className="pt-4 sm:pt-5 space-y-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
-          <p className="font-semibold text-slate-700 text-sm">📖 Como interpretar estes dados</p>
+          <p className="font-semibold text-slate-700 text-sm">📖 Como interpretar sem ambiguidade</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <p className="font-medium text-slate-700 mb-1">Indicadores reais (linha de cima)</p>
-              <p>Basileia, ROE, Liquidez e Inadimplência são os valores brutos reportados ao BCB — exatamente como aparecem nos balanços oficiais. Use estes para comparações técnicas diretas entre bancos.</p>
+              <p className="font-medium text-slate-700 mb-1">Escopo da tela</p>
+              <p>Os valores exibidos refletem a base mais recente disponivel para os bancos monitorados neste sistema. Nao representam todo o sistema financeiro nacional nem substituem consulta direta ao BCB.</p>
             </div>
             <div>
-              <p className="font-medium text-slate-700 mb-1">Pontuações 0–100 (linha de baixo)</p>
-              <p>Cada dimensão é normalizada numa escala de 0 a 100 para facilitar comparação. Capital 97 não significa 97% — significa que o banco está no topo da escala para aquele indicador.</p>
+              <p className="font-medium text-slate-700 mb-1">Valores e pontuacoes</p>
+              <p>Metricas como Basileia e ROE sao valores percentuais. Ja as pontuacoes 0-100 sao escala interna de comparacao e nao equivalem a percentual contábil, risco legal ou solvencia oficial.</p>
             </div>
             <div>
-              <p className="font-medium text-slate-700 mb-1">Por que a comparação mudou?</p>
-              <p>Além dos 4 pilares prudenciais, o cálculo inclui <strong>porte</strong> com base em ativos, patrimônio, depósitos e carteira. Isso reduz distorções entre bancos gigantes de varejo e bancos de nicho, mantendo base principal em dados do BCB.</p>
+              <p className="font-medium text-slate-700 mb-1">Regra do calculo</p>
+              <p>O indicador composto usa pesos por dimensao e repondera categorias sem dados suficientes para evitar penalizacao artificial por ausencia de campo. Isso melhora comparabilidade tecnica entre bancos.</p>
             </div>
             <div>
-              <p className="font-medium text-slate-700 mb-1">Como evitamos comparação injusta?</p>
-              <p>Além do score técnico, mostramos posição dentro do segmento de porte (S1-S5). Assim, o banco é comparado com pares de tamanho semelhante, reduzindo distorções entre gigantes de varejo e bancos de nicho.</p>
+              <p className="font-medium text-slate-700 mb-1">Comparacao por pares</p>
+              <p>A posicao por segmento (S1-S5) compara o banco com instituicoes de porte semelhante. Nao e comparacao regulatoria oficial nem substitui criterios prudenciais do supervisor.</p>
             </div>
             <div>
-              <p className="font-medium text-slate-700 mb-1">Faixas regulatórias</p>
+              <p className="font-medium text-slate-700 mb-1">Faixas relativas da amostra</p>
               <ul className="space-y-0.5">
-                <li><span className="font-medium text-green-700">Faixa A:</span> quartil superior entre bancos da amostra BCB atual</li>
-                <li><span className="font-medium text-yellow-700">Faixa B:</span> acima da mediana e abaixo do quartil superior</li>
-                <li><span className="font-medium text-orange-700">Faixa C:</span> abaixo da mediana e acima do quartil inferior</li>
-                <li><span className="font-medium text-red-700">Faixa D:</span> quartil inferior da amostra (maior atenção relativa)</li>
+                <li><span className="font-medium text-green-700">Faixa relativa A:</span> quartil superior da amostra do periodo</li>
+                <li><span className="font-medium text-yellow-700">Faixa relativa B:</span> entre mediana e quartil superior</li>
+                <li><span className="font-medium text-orange-700">Faixa relativa C:</span> entre quartil inferior e mediana</li>
+                <li><span className="font-medium text-red-700">Faixa relativa D:</span> quartil inferior da amostra do periodo</li>
               </ul>
             </div>
             <div>
-              <p className="font-medium text-slate-700 mb-1">Origem dos dados (resguardo legal)</p>
+              <p className="font-medium text-slate-700 mb-1">Origem dos dados</p>
               <ul className="space-y-0.5">
-                <li><span className="font-medium text-blue-700">BCB Direto:</span> valor extraido diretamente de base oficial do Banco Central.</li>
-                <li><span className="font-medium text-green-700">Derivado IFData:</span> calculado a partir de campos oficiais do IFData.</li>
-                <li><span className="font-medium text-amber-700">Nao estrito:</span> fonte complementar/estimativa quando o campo nao vem no modo estrito.</li>
-                <li><span className="font-medium text-slate-700">Sem dados:</span> metrica nao disponivel na captura atual.</li>
+                <li><span className="font-medium text-blue-700">BCB direto:</span> campo publicado em base oficial do Banco Central.</li>
+                <li><span className="font-medium text-green-700">Derivado IFData:</span> calculo objetivo a partir de campos oficiais do IFData.</li>
+                <li><span className="font-medium text-amber-700">Nao estrito:</span> campo sem extracao estrita no IFData da captura atual.</li>
+                <li><span className="font-medium text-slate-700">Sem dados:</span> indicador indisponivel no periodo analisado.</li>
               </ul>
             </div>
           </div>
-          <p className="text-xs text-slate-400 pt-1 border-t border-slate-200">Fonte principal: Banco Central do Brasil (BCB/IFData). Quando houver fonte complementar, isso e exibido no rótulo da métrica. Uso informativo; em caso de divergencia, considerar a publicacao oficial mais recente.</p>
+          <p className="text-xs text-slate-400 pt-1 border-t border-slate-200">Fonte principal: Banco Central do Brasil (BCB/IFData). Este painel e informativo e metodologico. Para decisao juridica, regulatoria, credito ou investimento, consultar as publicacoes oficiais e documentos da instituicao.</p>
         </CardContent>
       </Card>
     </div>

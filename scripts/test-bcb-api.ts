@@ -29,7 +29,7 @@ async function testBCBAPI() {
 
     // 3. Buscar dados verificados de um banco específico (Nubank como teste)
     console.log('3️⃣  Testando coleta verificada de banco específico (Nubank)...');
-    const banksForQuarter = await bcbAPI.fetchAllBanksData(latestQuarter.date);
+    const banksForQuarter = await bcbAPI.fetchAllBanksData();
     const nubankData = banksForQuarter.find((bank) => bank.cnpj === '18236120000158');
 
     if (nubankData) {
@@ -53,7 +53,7 @@ async function testBCBAPI() {
     console.log('5️⃣  Testando busca de todos os bancos monitorados...');
     console.log('   ⚠️  NOTA: Isso pode demorar alguns segundos...\n');
     
-    const allBanks = await bcbAPI.fetchAllBanksData();
+    const allBanks = banksForQuarter;
     
     console.log(`\n   ✅ Coleta concluída!`);
     console.log(`   🏦 Bancos retornados: ${allBanks.length}/14`);

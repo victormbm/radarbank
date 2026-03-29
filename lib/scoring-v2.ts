@@ -245,15 +245,50 @@ function calculateSizeScore(snapshot: BankSnapshotData): number {
   return totalWeight > 0 ? weighted / totalWeight : 50;
 }
 
-function calculateStructuralScore(breakdown: ScoreBreakdown): number {
-  return (
-    breakdown.capital * SCORE_WEIGHTS.capital +
-    breakdown.liquidity * SCORE_WEIGHTS.liquidity +
-    breakdown.profitability * SCORE_WEIGHTS.profitability +
-    breakdown.credit * SCORE_WEIGHTS.credit +
-    breakdown.size * SCORE_WEIGHTS.size +
-    breakdown.market * SCORE_WEIGHTS.market
-  );
+function calculateStructuralScore(
+  breakdown: ScoreBreakdown,
+  availability: {
+    capital: boolean;
+    liquidity: boolean;
+    profitability: boolean;
+    credit: boolean;
+    size: boolean;
+  }
+): number {
+  let weightedSum = 0;
+  let activeWeight = 0;
+
+  if (availability.capital) {
+    weightedSum += breakdown.capital * SCORE_WEIGHTS.capital;
+    activeWeight += SCORE_WEIGHTS.capital;
+  }
+
+  if (availability.liquidity) {
+    weightedSum += breakdown.liquidity * SCORE_WEIGHTS.liquidity;
+    activeWeight += SCORE_WEIGHTS.liquidity;
+  }
+
+  if (availability.profitability) {
+    weightedSum += breakdown.profitability * SCORE_WEIGHTS.profitability;
+    activeWeight += SCORE_WEIGHTS.profitability;
+  }
+
+  if (availability.credit) {
+    weightedSum += breakdown.credit * SCORE_WEIGHTS.credit;
+    activeWeight += SCORE_WEIGHTS.credit;
+  }
+
+  if (availability.size) {
+    weightedSum += breakdown.size * SCORE_WEIGHTS.size;
+    activeWeight += SCORE_WEIGHTS.size;
+  }
+
+  // Sem cobertura mínima de dados, manter neutro para evitar viés artificial.
+  if (activeWeight === 0) {
+    return 50;
+  }
+
+  return weightedSum / activeWeight;
 }
 
 function calculateStressScore(
@@ -265,7 +300,7 @@ function calculateStressScore(
   const previous = context.previousSnapshot;
 
   // Deterioração de fundamentos vs período anterior
-  let fundamentalsResilience = 55;
+  let fundamentalsResilience = 50;
   if (previous) {
     let penalty = 0;
 
@@ -294,6 +329,10 @@ function calculateStressScore(
     }
 
     fundamentalsResilience = Math.max(0, 100 - penalty);
+  }
+
+  if (!previous) {
+    reasoning.push("Sem historico suficiente para avaliar estresse de tendencia");
   }
 
   if (fundamentalsResilience < 50) reasoning.push("Deterioração recente de fundamentos");
@@ -388,27 +427,42 @@ export function computeDetailedScore(snapshot: BankSnapshotData, context: Scorin
   const profitabilityMetrics = ['roe', 'roa', 'nim', 'cost_to_income'];
   const creditMetrics = ['npl_ratio', 'coverage_ratio', 'write_off_rate', 'credit_quality'];
 
-  const capitalScore = calculateCategoryScore(capitalMetrics, metricScores, metricsData);
-  const liquidityScore = calculateCategoryScore(liquidityMetrics, metricScores, metricsData);
-  const profitabilityScore = calculateCategoryScore(profitabilityMetrics, metricScores, metricsData);
-  const creditScore = calculateCategoryScore(creditMetrics, metricScores, metricsData);
-  const sizeScore = calculateSizeScore(snapshot);
+  const capitalCategory = calculateCategoryScore(capitalMetrics, metricScores, metricsData);
+  const liquidityCategory = calculateCategoryScore(liquidityMetrics, metricScores, metricsData);
+  const profitabilityCategory = calculateCategoryScore(profitabilityMetrics, metricScores, metricsData);
+  const creditCategory = calculateCategoryScore(creditMetrics, metricScores, metricsData);
+  const hasSizeData =
+    typeof snapshot.totalAssets === "number" && snapshot.totalAssets > 0 ||
+    typeof snapshot.equity === "number" && snapshot.equity > 0 ||
+    typeof snapshot.totalDeposits === "number" && snapshot.totalDeposits > 0 ||
+    typeof snapshot.loanPortfolio === "number" && snapshot.loanPortfolio > 0;
+  const sizeScore = hasSizeData ? calculateSizeScore(snapshot) : 50;
 
   const marketScore = 50;
 
   const breakdown: ScoreBreakdown = {
-    capital: capitalScore,
-    liquidity: liquidityScore,
-    profitability: profitabilityScore,
-    credit: creditScore,
+    capital: capitalCategory.score,
+    liquidity: liquidityCategory.score,
+    profitability: profitabilityCategory.score,
+    credit: creditCategory.score,
     size: sizeScore,
     market: marketScore,
   };
 
-  const structuralScore = calculateStructuralScore(breakdown);
+  const structuralScore = calculateStructuralScore(breakdown, {
+    capital: capitalCategory.hasData,
+    liquidity: liquidityCategory.hasData,
+    profitability: profitabilityCategory.hasData,
+    credit: creditCategory.hasData,
+    size: hasSizeData,
+  });
   const stressAnalysis = calculateStressScore(snapshot, breakdown, context);
   const stressScore = stressAnalysis.stressScore;
   const confidence = calculateConfidence(snapshot, context);
+
+  if (!creditCategory.hasData) {
+    stressAnalysis.reasoning.push("Score de credito desconsiderado por ausencia de dados oficiais suficientes");
+  }
 
   // Score final = estrutural (longo prazo) + estresse (curto prazo)
   const totalScore =
@@ -437,7 +491,7 @@ function calculateCategoryScore(
   metricKeys: string[], 
   metricScores: Record<string, number>,
   metricsData: Record<string, number | null | undefined>
-): number {
+): { score: number; hasData: boolean } {
   let totalWeight = 0;
   let weightedSum = 0;
 
@@ -452,10 +506,18 @@ function calculateCategoryScore(
     }
   }
 
-  if (totalWeight === 0) return 0;
+  if (totalWeight === 0) {
+    return {
+      score: 50,
+      hasData: false,
+    };
+  }
   
   // Normalizar para escala 0-100 da categoria
-  return (weightedSum / totalWeight);
+  return {
+    score: weightedSum / totalWeight,
+    hasData: true,
+  };
 }
 
 /**

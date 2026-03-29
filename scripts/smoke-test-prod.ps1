@@ -6,7 +6,8 @@ param(
   [string]$AdminApiKey,
 
   [string]$DataBase = "",
-  [int]$Historical = 0
+  [int]$Historical = 0,
+  [switch]$AllowExpectedIngestFailure
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,13 +16,23 @@ function Call-Endpoint {
   param(
     [string]$Method,
     [string]$Url,
-    [hashtable]$Headers
+    [hashtable]$Headers,
+    [switch]$AllowFailure
   )
 
   Write-Host "$Method $Url"
-  $response = Invoke-WebRequest -Method $Method -Uri $Url -Headers $Headers -UseBasicParsing
-  Write-Host "Status: $($response.StatusCode)"
-  return $response.Content
+  try {
+    $response = Invoke-WebRequest -Method $Method -Uri $Url -Headers $Headers -UseBasicParsing
+    Write-Host "Status: $($response.StatusCode)"
+    return $response.Content
+  } catch {
+    if ($AllowFailure -and $_.Exception.Response) {
+      $statusCode = [int]$_.Exception.Response.StatusCode
+      Write-Host "Status: $statusCode (allowed failure)" -ForegroundColor Yellow
+      return $_.ErrorDetails.Message
+    }
+    throw
+  }
 }
 
 $headers = @{
@@ -41,8 +52,12 @@ if ($Historical -gt 0) { $query += "historical=$Historical" }
 if ($query.Count -gt 0) {
   $ingestUrl = "$ingestUrl?" + ($query -join "&")
 }
-$ingestOut = Call-Endpoint -Method "GET" -Url $ingestUrl -Headers $headers
+$ingestOut = Call-Endpoint -Method "GET" -Url $ingestUrl -Headers $headers -AllowFailure:$AllowExpectedIngestFailure
 Write-Host $ingestOut
+
+if ($AllowExpectedIngestFailure -and $ingestOut -match 'IfDataCadastro indisponivel') {
+  Write-Host "Ingest strict mode unavailable at source (expected upstream outage). Continuing smoke test..." -ForegroundColor Yellow
+}
 
 Write-Host "[3/4] Admin recompute check"
 $scoreOut = Call-Endpoint -Method "POST" -Url "$BaseUrl/api/score/recompute" -Headers $headers

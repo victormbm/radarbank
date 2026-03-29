@@ -2,7 +2,7 @@
 
 ## 📅 Visão Geral
 
-Sistema de CRON job que atualiza automaticamente os dados bancários do BCB diariamente, mantendo a plataforma sempre com as informações mais recentes disponíveis.
+Sistema de CRON job que verifica automaticamente os dados bancários do BCB a cada 6 horas, mantendo a plataforma sempre com as informações mais recentes disponíveis.
 
 ## 🎯 Objetivos
 
@@ -11,12 +11,19 @@ Sistema de CRON job que atualiza automaticamente os dados bancários do BCB diar
 3. **Inteligência**: Detectar mudanças significativas e alertar usuários
 4. **Transparência**: Mostrar status de atualização para usuários
 
+## 🔒 Política Operacional (Escolha 1)
+
+- Modo ativo em produção: `strict-only`.
+- Configuração obrigatória: `BCB_STRICT_ONLY=true`.
+- Efeito: se `BCB_STRICT_ONLY=false`, os endpoints de ingestão (`/api/ingest/bcb` e `/api/ingest/cron`) retornam `503` e não executam coleta.
+- Motivo: preservar trilha auditável CNPJ↔CodInst e evitar qualquer fallback não verificável.
+
 ## ⚙️ Arquitetura
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Vercel CRON                           │
-│              (Executa diariamente às 2h AM)             │
+│            (Executa a cada 6 horas em produção)         │
 └─────────────────┬───────────────────────────────────────┘
                   │
                   ▼
@@ -83,7 +90,7 @@ Configuração do Vercel CRON.
   "crons": [
     {
       "path": "/api/ingest/cron",
-      "schedule": "0 2 * * *"  // 2h AM todos os dias
+      "schedule": "0 */6 * * *"  // a cada 6 horas
     }
   ]
 }

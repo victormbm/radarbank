@@ -62,6 +62,11 @@ interface TrackedBankConfig {
   searchTerm: string;
 }
 
+interface CodInstCandidate {
+  tipoInstituicao: 1 | 3;
+  codInst: string;
+}
+
 const MANUAL_BANK_OVERRIDES: Partial<Record<string, { codInst: string; tipoInstituicao: 1 | 3 }>> = {
   nubank: {
     codInst: 'C0084693',
@@ -78,6 +83,7 @@ export interface QuarterData {
 
 export class BCBAPIService {
   private readonly BASE_URL = 'https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata';
+  private cadastroCache = new Map<number, IFDataCadastroRow[]>();
 
   private readonly TRACKED_BANKS: Record<string, TrackedBankConfig> = {
     nubank: { cnpj: '18236120000158', label: 'Nu Pagamentos S.A.', searchTerm: 'NU' },
@@ -167,53 +173,127 @@ export class BCBAPIService {
   }
 
   async fetchAllBanksData(dataBase?: string): Promise<BCBBankData[]> {
-    const quarter = dataBase ? { date: dataBase } as QuarterData : this.getLatestAvailableQuarter();
-    const anoMes = this.toAnoMes(quarter.date);
-
-    console.log(`\n[BCB IFData] Iniciando coleta oficial`);
-    console.log(`[BCB IFData] Data-base: ${quarter.date} (${anoMes})`);
-    console.log(`[BCB IFData] Bancos monitorados: ${Object.keys(this.TRACKED_BANKS).length}`);
-    console.log('-'.repeat(60));
-
-    const cadastroAvailable = await this.isCadastroAvailable(anoMes);
-    if (!cadastroAvailable) {
-      throw new Error(
-        `IfDataCadastro indisponivel para AnoMes=${anoMes} (HTTP 500 no endpoint oficial). `
-        + 'Sem cadastro oficial nao existe vinculo auditavel CNPJ<->CodInst; coleta estrita abortada.',
-      );
-    }
-
-    const results: BCBBankData[] = [];
-
-    for (const [slug, config] of Object.entries(this.TRACKED_BANKS)) {
-      try {
-        const ref = await this.resolveTrackedBankReference(slug, config, anoMes);
-        if (!ref) {
-          console.warn(`[BCB IFData] Sem referencia oficial resolvida para ${slug}`);
-          continue;
-        }
-
-        const rows = await this.fetchValueRows(ref, anoMes, 'T');
-        if (rows.length === 0) {
-          console.warn(`[BCB IFData] Sem valores IFData para ${slug} (${ref.codInst})`);
-          continue;
-        }
-
-        results.push(this.transformToOurFormat(ref, rows, config.label));
-        await this.sleep(120);
-      } catch (error) {
-        console.error(`[BCB IFData] Falha ao processar ${slug}:`, error);
+    const requestedQuarter = dataBase ? { date: dataBase } as QuarterData : this.getLatestAvailableQuarter();
+    const resolvedQuarter = await this.resolveBestAvailableQuarter(requestedQuarter.date, dataBase ? 0 : 4);
+    const quarterCandidates = [resolvedQuarter];
+    if (!dataBase) {
+      let fallbackDate = resolvedQuarter;
+      for (let step = 0; step < 4; step++) {
+        fallbackDate = this.getPreviousQuarterDate(fallbackDate);
+        quarterCandidates.push(fallbackDate);
       }
     }
 
-    console.log('-'.repeat(60));
-    console.log(`[BCB IFData] Coleta concluida: ${results.length}/${Object.keys(this.TRACKED_BANKS).length} bancos\n`);
+    for (let index = 0; index < quarterCandidates.length; index++) {
+      const activeQuarter = quarterCandidates[index];
+      const anoMes = this.toAnoMes(activeQuarter);
 
-    if (results.length === 0) {
-      throw new Error('Nenhum banco retornou dados oficiais verificaveis do IFData.');
+      console.log(`\n[BCB IFData] Iniciando coleta oficial`);
+      console.log(`[BCB IFData] Data-base: ${activeQuarter} (${anoMes})`);
+      if (activeQuarter !== requestedQuarter.date) {
+        console.log(`[BCB IFData] Fallback automatico de data-base: ${requestedQuarter.date} -> ${activeQuarter}`);
+      }
+      console.log(`[BCB IFData] Bancos monitorados: ${Object.keys(this.TRACKED_BANKS).length}`);
+      console.log('-'.repeat(60));
+
+      const cadastroAvailable = await this.isCadastroAvailable(anoMes);
+      if (!cadastroAvailable) {
+        throw new Error(
+          `IfDataCadastro indisponivel para AnoMes=${anoMes} (HTTP 500 no endpoint oficial). `
+          + 'Sem cadastro oficial nao existe vinculo auditavel CNPJ<->CodInst; coleta estrita abortada.',
+        );
+      }
+
+      const results: BCBBankData[] = [];
+
+      for (const [slug, config] of Object.entries(this.TRACKED_BANKS)) {
+        try {
+          const ref = await this.resolveTrackedBankReference(slug, config, anoMes);
+          if (!ref) {
+            console.warn(`[BCB IFData] Sem referencia oficial resolvida para ${slug}`);
+            continue;
+          }
+
+          const rows = await this.fetchValueRows(ref, anoMes, 'T');
+          if (rows.length === 0) {
+            console.warn(`[BCB IFData] Sem valores IFData para ${slug} (${ref.codInst})`);
+            continue;
+          }
+
+          results.push(this.transformToOurFormat(ref, rows, config.label));
+          await this.sleep(120);
+        } catch (error) {
+          console.error(`[BCB IFData] Falha ao processar ${slug}:`, error);
+        }
+      }
+
+      console.log('-'.repeat(60));
+      console.log(`[BCB IFData] Coleta concluida: ${results.length}/${Object.keys(this.TRACKED_BANKS).length} bancos\n`);
+
+      if (results.length > 0) {
+        return results;
+      }
+
+      if (dataBase || index === quarterCandidates.length - 1) {
+        break;
+      }
     }
 
-    return results;
+    throw new Error('Nenhum banco retornou dados oficiais verificaveis do IFData.');
+  }
+
+  private async resolveBestAvailableQuarter(startDate: string, maxFallbackSteps: number): Promise<string> {
+    let currentDate = startDate;
+
+    for (let step = 0; step <= maxFallbackSteps; step++) {
+      const anoMes = this.toAnoMes(currentDate);
+      const hasAnyValues = await this.hasAnyValuesForAnoMes(anoMes);
+      if (hasAnyValues) {
+        return currentDate;
+      }
+
+      currentDate = this.getPreviousQuarterDate(currentDate);
+    }
+
+    return startDate;
+  }
+
+  private async hasAnyValuesForAnoMes(anoMes: number): Promise<boolean> {
+    for (const tipo of [1, 3] as const) {
+      const url = `${this.BASE_URL}/IfDataValores(AnoMes=${anoMes},TipoInstituicao=${tipo},Relatorio=%27T%27)?$top=1&$format=json`;
+      try {
+        const data = await this.fetchJson<IFDataValorRow>(url);
+        if (Array.isArray(data.value) && data.value.length > 0) {
+          return true;
+        }
+      } catch {
+        // Ignora e tenta o outro tipo.
+      }
+    }
+
+    return false;
+  }
+
+  private getPreviousQuarterDate(date: string): string {
+    const year = Number(date.slice(0, 4));
+    const month = Number(date.slice(5, 7));
+    const quarter = Math.ceil(month / 3);
+
+    let previousQuarter = quarter - 1;
+    let previousYear = year;
+    if (previousQuarter === 0) {
+      previousQuarter = 4;
+      previousYear -= 1;
+    }
+
+    const quarterToDate: Record<number, string> = {
+      1: `${previousYear}-03-31`,
+      2: `${previousYear}-06-30`,
+      3: `${previousYear}-09-30`,
+      4: `${previousYear}-12-31`,
+    };
+
+    return quarterToDate[previousQuarter];
   }
 
   async testConnection(): Promise<boolean> {
@@ -299,11 +379,68 @@ export class BCBAPIService {
     anoMes: number,
   ): Promise<ResolvedBankReference | null> {
     const override = MANUAL_BANK_OVERRIDES[slug];
-    const rows = await this.fetchCadastroRows(
-      anoMes,
-      `contains(NomeInstituicao,'${config.searchTerm}')`,
-      50,
-    ).catch(() => []);
+    const cnpj = config.cnpj.replace(/\D/g, '');
+    const baseCode = this.toBaseCode(cnpj);
+    const escapedSearchTerm = this.escapeODataLiteral(config.searchTerm);
+    const escapedLabel = this.escapeODataLiteral(config.label);
+
+    const cadastroUniverse = await this.getCadastroUniverse(anoMes);
+    const normalizedLabel = this.normalizeText(config.label);
+    const normalizedSearch = this.normalizeText(config.searchTerm);
+
+    const fromUniverse = cadastroUniverse.filter((row) => {
+      const rowCnpj = (row.CnpjInstituicaoLider || '').replace(/\D/g, '');
+      const rowName = this.normalizeText(row.NomeInstituicao);
+      const cnpjMatch = rowCnpj === cnpj || rowCnpj.startsWith(baseCode);
+      const nameMatch = rowName.includes(normalizedSearch) || rowName.includes(normalizedLabel);
+      return cnpjMatch || nameMatch;
+    });
+
+    const universeRows = fromUniverse.length > 0 ? fromUniverse : [];
+
+    if (universeRows.length > 0) {
+      const activeRows = universeRows.filter((row) => row.Situacao === 'A');
+      const candidateRows = activeRows.length > 0 ? activeRows : universeRows;
+      const preferredByOverride = override
+        ? candidateRows.find((row) => row.CodInst === override.codInst)
+        : null;
+      const prudentialRow = candidateRows.find((row) => row.CodInst === row.CodConglomeradoPrudencial)
+        || candidateRows.find((row) => row.CodInst.startsWith('C'));
+      const chosen = preferredByOverride || prudentialRow || candidateRows[0];
+
+      return {
+        slug,
+        fullCnpj: config.cnpj,
+        baseCode,
+        codInst: preferredByOverride?.CodInst || prudentialRow?.CodInst || chosen.CodInst,
+        tipoInstituicao: override?.tipoInstituicao || (prudentialRow ? 1 : 3),
+        name: chosen.NomeInstituicao || config.label,
+        segment: preferredByOverride?.Sr || prudentialRow?.Sr || chosen.Sr || null,
+      };
+    }
+
+    // Prioriza resolucao por CNPJ para manter trilha auditavel CNPJ <-> CodInst.
+    const filters = [
+      `CnpjInstituicaoLider eq '${cnpj}'`,
+      `contains(CnpjInstituicaoLider,'${baseCode}')`,
+      `contains(NomeInstituicao,'${escapedSearchTerm}')`,
+      `contains(NomeInstituicao,'${escapedLabel}')`,
+    ];
+
+    const rowsMap = new Map<string, IFDataCadastroRow>();
+    for (const filter of filters) {
+      const currentRows = await this.fetchCadastroRows(anoMes, filter, 80).catch(() => []);
+      for (const row of currentRows) {
+        if (row?.CodInst) {
+          rowsMap.set(row.CodInst, row);
+        }
+      }
+      if (rowsMap.size > 0) {
+        break;
+      }
+    }
+
+    const rows = Array.from(rowsMap.values());
 
     if (rows.length === 0) {
       return null;
@@ -328,6 +465,99 @@ export class BCBAPIService {
       name: chosen.NomeInstituicao || config.label,
       segment: preferredByOverride?.Sr || prudentialRow?.Sr || chosen.Sr || null,
     };
+  }
+
+  private async getCadastroUniverse(anoMes: number): Promise<IFDataCadastroRow[]> {
+    const cached = this.cadastroCache.get(anoMes);
+    if (cached) {
+      return cached;
+    }
+
+    const url = `${this.BASE_URL}/IfDataCadastro(AnoMes=${anoMes})?$select=CodInst,NomeInstituicao,Sr,CodConglomeradoPrudencial,CnpjInstituicaoLider,Situacao&$top=5000&$format=json`;
+    const data = await this.fetchJson<IFDataCadastroRow>(url);
+    const rows = Array.isArray(data.value) ? data.value : [];
+    this.cadastroCache.set(anoMes, rows);
+    return rows;
+  }
+
+  private async resolveTrackedBankReferenceByValueProbe(
+    slug: string,
+    config: TrackedBankConfig,
+    anoMes: number,
+  ): Promise<ResolvedBankReference | null> {
+    const candidates = this.buildCodInstCandidates(config.cnpj);
+    const override = MANUAL_BANK_OVERRIDES[slug];
+
+    if (override) {
+      candidates.unshift({
+        tipoInstituicao: override.tipoInstituicao,
+        codInst: override.codInst,
+      });
+    }
+
+    const seen = new Set<string>();
+    for (const candidate of candidates) {
+      const key = `${candidate.tipoInstituicao}:${candidate.codInst}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+
+      const hasValues = await this.hasValueRows(anoMes, candidate.tipoInstituicao, candidate.codInst);
+      if (!hasValues) {
+        continue;
+      }
+
+      return {
+        slug,
+        fullCnpj: config.cnpj,
+        baseCode: this.toBaseCode(config.cnpj),
+        codInst: candidate.codInst,
+        tipoInstituicao: candidate.tipoInstituicao,
+        name: config.label,
+        segment: null,
+      };
+    }
+
+    return null;
+  }
+
+  private buildCodInstCandidates(cnpj: string): CodInstCandidate[] {
+    const base8 = this.toBaseCode(cnpj);
+    const trimmed = base8.replace(/^0+/, '') || '0';
+    const values = [base8, trimmed, `C${base8}`, `C${trimmed}`];
+    const uniqueCodes = [...new Set(values)];
+    const candidates: CodInstCandidate[] = [];
+
+    for (const tipoInstituicao of [1, 3] as const) {
+      for (const codInst of uniqueCodes) {
+        candidates.push({ tipoInstituicao, codInst });
+      }
+    }
+
+    return candidates;
+  }
+
+  private async hasValueRows(anoMes: number, tipoInstituicao: 1 | 3, codInst: string): Promise<boolean> {
+    const filter = encodeURIComponent(`CodInst eq '${codInst}'`);
+    const url = `${this.BASE_URL}/IfDataValores(AnoMes=${anoMes},TipoInstituicao=${tipoInstituicao},Relatorio=%27T%27)?$filter=${filter}&$top=1&$format=json`;
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
+      const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!response.ok) {
+        return false;
+      }
+      const data = await response.json() as ODataResponse<IFDataValorRow>;
+      return Array.isArray(data.value) && data.value.length > 0;
+    } catch {
+      return false;
+    }
   }
 
   private async resolveBankReferenceByCnpj(
@@ -471,6 +701,10 @@ export class BCBAPIService {
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
+  }
+
+  private escapeODataLiteral(value: string): string {
+    return value.replace(/'/g, "''");
   }
 
   private toPercent(value: number | undefined): number | undefined {
