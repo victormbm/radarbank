@@ -16,6 +16,10 @@ type AdSenseSlotProps = {
   height?: number;
 };
 
+// Em dev, defina NEXT_PUBLIC_ADSENSE_DEV_MODE=unfilled no .env.local
+// para simular o estado sem preenchimento. Omita ou use =filled para simular preenchido.
+const DEV_SIMULATE = process.env.NEXT_PUBLIC_ADSENSE_DEV_MODE ?? "filled";
+
 export function AdSenseSlot({ slot, format = "auto", className, width, height }: AdSenseSlotProps) {
   const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
   const fullWidth = !width && !height;
@@ -125,16 +129,31 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
   }
 
   if (isDev) {
+    if (DEV_SIMULATE === "unfilled") {
+      return (
+        <div className={className}>
+          <div
+            className="flex items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-xs text-slate-500"
+            style={{ minHeight: "60px" }}
+          >
+            Espaco publicitario indisponivel no momento.
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className={className}>
         <div
-          className="flex items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-xs text-slate-500"
+          className="flex flex-col items-center justify-center gap-1 rounded-md border border-dashed border-blue-300 bg-blue-50 px-3 text-xs text-blue-600"
           style={{
             minHeight: height ? `${height}px` : "90px",
             width: width ? `${width}px` : "100%",
           }}
         >
-          Preview local AdSense ({format}) - slot {slot}
+          <span className="font-semibold">AdSense [DEV]</span>
+          <span>{width ? `${width}×${height}px` : "responsivo"} · slot {slot}</span>
+          <span className="text-blue-400">NEXT_PUBLIC_ADSENSE_DEV_MODE=unfilled para simular sem preenchimento</span>
         </div>
       </div>
     );
