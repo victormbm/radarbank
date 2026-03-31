@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -31,16 +30,17 @@ export default function RootLayout({
 
   return (
     <html lang="en" className={inter.variable}>
-      <body className={inter.className} suppressHydrationWarning>
-        {children}
+      <head>
         {adsenseClientId && (
-          <Script
+          <script
             async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClientId}`}
             crossOrigin="anonymous"
-            strategy="afterInteractive"
           />
         )}
+      </head>
+      <body className={inter.className} suppressHydrationWarning>
+        {children}
       </body>
     </html>
   );
