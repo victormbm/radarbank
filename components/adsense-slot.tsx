@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -25,12 +25,7 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
   const pushedRef = useRef(false);
   const [status, setStatus] = useState<"idle" | "loading" | "filled" | "unfilled" | "error">("idle");
 
-  const fallbackMinHeight = useMemo(() => {
-    if (height && height > 0) {
-      return `${height}px`;
-    }
-    return "90px";
-  }, [height]);
+  const isUnfilled = status === "unfilled" || status === "error";
 
   useEffect(() => {
     if (!clientId || !slot || isDev) {
@@ -150,20 +145,20 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
       <ins
         ref={adRef}
         className="adsbygoogle"
-        style={{ 
-          display: "block",
+        style={{
+          display: isUnfilled ? "none" : "block",
           ...(width && { width: `${width}px` }),
-          ...(height && { height: `${height}px` })
+          ...(height && { height: `${height}px` }),
         }}
         data-ad-client={clientId}
         data-ad-slot={slot}
         data-ad-format={adFormat}
         data-full-width-responsive={fullWidth ? "true" : "false"}
       />
-      {status === "unfilled" && (
+      {isUnfilled && (
         <div
-          className="mt-2 flex items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-xs text-slate-500"
-          style={{ minHeight: fallbackMinHeight }}
+          className="flex items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-xs text-slate-500"
+          style={{ minHeight: "60px" }}
         >
           Espaco publicitario indisponivel no momento.
         </div>

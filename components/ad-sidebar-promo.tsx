@@ -22,7 +22,7 @@ export function AdSidebarPromo() {
               format="auto"
               width={300}
               height={600}
-              className="w-[300px] h-[600px]"
+              className="w-[300px]"
             />
           </div>
         </div>

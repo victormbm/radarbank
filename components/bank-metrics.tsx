@@ -242,7 +242,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
                   format="auto"
                   width={300}
                   height={600}
-                  className="mx-auto w-[300px] h-[600px]"
+                  className="mx-auto w-[300px]"
                 />
               ) : (
                 <div className="h-[600px] w-[300px] mx-auto rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-500">
