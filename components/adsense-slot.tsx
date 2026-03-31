@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -21,18 +21,109 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
   const fullWidth = !width && !height;
   const isDev = process.env.NODE_ENV !== "production";
   const adFormat = format === "auto" || format === "fluid" ? format : "auto";
+  const adRef = useRef<HTMLModElement | null>(null);
+  const pushedRef = useRef(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "filled" | "unfilled" | "error">("idle");
+
+  const fallbackMinHeight = useMemo(() => {
+    if (height && height > 0) {
+      return `${height}px`;
+    }
+    return "90px";
+  }, [height]);
 
   useEffect(() => {
-    if (!clientId) {
+    if (!clientId || !slot || isDev) {
       return;
     }
 
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch {
-      // Ignore duplicate push errors caused by remounts.
+    const adElement = adRef.current;
+    if (!adElement) {
+      return;
     }
-  }, [clientId, slot, width, height]);
+
+    const currentStatus = adElement.getAttribute("data-ad-status");
+    if (currentStatus === "filled") {
+      setStatus("filled");
+      return;
+    }
+    if (currentStatus === "unfilled") {
+      setStatus("unfilled");
+      return;
+    }
+
+    setStatus("loading");
+
+    const observer = new MutationObserver(() => {
+      const mutationStatus = adElement.getAttribute("data-ad-status");
+      if (mutationStatus === "filled") {
+        setStatus("filled");
+      } else if (mutationStatus === "unfilled") {
+        setStatus("unfilled");
+      }
+    });
+
+    observer.observe(adElement, {
+      attributes: true,
+      attributeFilter: ["data-ad-status", "data-adsbygoogle-status"],
+    });
+
+    const pushAd = () => {
+      if (pushedRef.current) {
+        return;
+      }
+
+      if (!window.adsbygoogle) {
+        return;
+      }
+
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        pushedRef.current = true;
+      } catch {
+        setStatus("error");
+      }
+    };
+
+    pushAd();
+
+    let pollAttempts = 0;
+    const pollMaxAttempts = 30;
+    const pollIntervalId = window.setInterval(() => {
+      const polledStatus = adElement.getAttribute("data-ad-status");
+      if (polledStatus === "filled") {
+        setStatus("filled");
+      } else if (polledStatus === "unfilled") {
+        setStatus("unfilled");
+      }
+
+      if (polledStatus === "filled" || polledStatus === "unfilled") {
+        window.clearInterval(pollIntervalId);
+        return;
+      }
+
+      pushAd();
+
+      pollAttempts += 1;
+      if (pollAttempts >= pollMaxAttempts) {
+        setStatus("unfilled");
+        window.clearInterval(pollIntervalId);
+      }
+    }, 1000);
+
+    const fallbackTimer = window.setTimeout(() => {
+      const timeoutStatus = adElement.getAttribute("data-ad-status");
+      if (timeoutStatus !== "filled") {
+        setStatus("unfilled");
+      }
+    }, 12000);
+
+    return () => {
+      observer.disconnect();
+      window.clearInterval(pollIntervalId);
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [clientId, slot, width, height, isDev]);
 
   if (!clientId || !slot) {
     return null;
@@ -57,6 +148,7 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
   return (
     <div className={className}>
       <ins
+        ref={adRef}
         className="adsbygoogle"
         style={{ 
           display: "block",
@@ -68,6 +160,14 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
         data-ad-format={adFormat}
         data-full-width-responsive={fullWidth ? "true" : "false"}
       />
+      {status === "unfilled" && (
+        <div
+          className="mt-2 flex items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-xs text-slate-500"
+          style={{ minHeight: fallbackMinHeight }}
+        >
+          Espaco publicitario indisponivel no momento.
+        </div>
+      )}
     </div>
   );
 }
