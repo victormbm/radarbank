@@ -19,6 +19,10 @@ substitutions:
   _ADMIN_SECRET: radar-bank-admin-api-key
   _CRON_SECRET: radar-bank-cron-secret
   _APP_URL: https://bancosegurobr.com.br
+  _ADSENSE_CLIENT_ID: ca-pub-5494350261158127
+  _ADSENSE_SLOT_DASHBOARD_TOP: "3991439875"
+  _ADSENSE_SLOT_SIDEBAR: "6887467468"
+  _ADSENSE_SLOT_FOOTER: "2678358202"
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -35,6 +39,17 @@ steps:
       - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:latest"
       - --cache-from
       - "$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO/$_SERVICE:latest"
+      # NEXT_PUBLIC_* precisam ser passados em build time para serem embarcados no bundle
+      - --build-arg
+      - NEXT_PUBLIC_APP_URL=$_APP_URL
+      - --build-arg
+      - NEXT_PUBLIC_ADSENSE_CLIENT_ID=$_ADSENSE_CLIENT_ID
+      - --build-arg
+      - NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP=$_ADSENSE_SLOT_DASHBOARD_TOP
+      - --build-arg
+      - NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR=$_ADSENSE_SLOT_SIDEBAR
+      - --build-arg
+      - NEXT_PUBLIC_ADSENSE_SLOT_FOOTER=$_ADSENSE_SLOT_FOOTER
       - .
 
   # 2. Push para o Artifact Registry
@@ -67,7 +82,7 @@ steps:
       - --concurrency=200
       - --timeout=300s
       # Variáveis de ambiente públicas
-      - --set-env-vars=NEXT_PUBLIC_APP_URL=$_APP_URL,NODE_ENV=production,BCB_STRICT_ONLY=true
+      - --set-env-vars=NEXT_PUBLIC_APP_URL=$_APP_URL,NODE_ENV=production,BCB_STRICT_ONLY=true,NEXT_PUBLIC_ADSENSE_CLIENT_ID=$_ADSENSE_CLIENT_ID,NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP=$_ADSENSE_SLOT_DASHBOARD_TOP,NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR=$_ADSENSE_SLOT_SIDEBAR,NEXT_PUBLIC_ADSENSE_SLOT_FOOTER=$_ADSENSE_SLOT_FOOTER
       # Segredos injetados do Secret Manager (mais seguro do que env vars planas)
       - --set-secrets=DATABASE_URL=$_DB_SECRET:latest,JWT_SECRET=$_JWT_SECRET:latest,ADMIN_API_KEY=$_ADMIN_SECRET:latest,CRON_SECRET=$_CRON_SECRET:latest,UPSTASH_REDIS_REST_URL=radar-bank-redis-url:latest,UPSTASH_REDIS_REST_TOKEN=radar-bank-redis-token:latest
 

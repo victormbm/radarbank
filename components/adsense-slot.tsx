@@ -10,7 +10,7 @@ declare global {
 
 type AdSenseSlotProps = {
   slot: string;
-  format?: "auto" | "rectangle" | "horizontal" | "vertical" | "display";
+  format?: "auto" | "fluid" | "rectangle" | "horizontal" | "vertical" | "display";
   className?: string;
   width?: number;
   height?: number;
@@ -20,6 +20,7 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
   const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
   const fullWidth = !width && !height;
   const isDev = process.env.NODE_ENV !== "production";
+  const adFormat = format === "auto" || format === "fluid" ? format : "auto";
 
   useEffect(() => {
     if (!clientId) {
@@ -64,7 +65,7 @@ export function AdSenseSlot({ slot, format = "auto", className, width, height }:
         }}
         data-ad-client={clientId}
         data-ad-slot={slot}
-        data-ad-format={format}
+        data-ad-format={adFormat}
         data-full-width-responsive={fullWidth ? "true" : "false"}
       />
     </div>

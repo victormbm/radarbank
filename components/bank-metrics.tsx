@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdSenseSlot } from "@/components/adsense-slot";
 import { DashboardBank, getBankVisual } from "@/lib/brazilian-banks";
 import type { BankDetail } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ const SEGMENT_LABELS: Record<string, string> = {
 
 export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetricsProps) {
   const visualBank = getBankVisual(bank);
+  const sidebarSlotId = process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR || "";
 
   const scores   = detail?.scores   ?? null;
   const snapshot = detail?.snapshot ?? null;
@@ -110,130 +112,151 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
       {isLoadingDetail ? (
         <ScoreSkeleton />
       ) : (
-        <Card className={cn("border-2 shadow-md", statusDisplay.bgColor)}>
-          <CardHeader className="pb-4 sm:pb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className={cn("p-2.5 sm:p-3 rounded-xl", statusDisplay.bgColor)}>
-                  <StatusIcon className={cn("h-5 w-5 sm:h-6 sm:w-6", statusDisplay.color)} />
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_332px] gap-5">
+          <Card className={cn("border-2 shadow-md", statusDisplay.bgColor)}>
+            <CardHeader className="pb-4 sm:pb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className={cn("p-2.5 sm:p-3 rounded-xl", statusDisplay.bgColor)}>
+                    <StatusIcon className={cn("h-5 w-5 sm:h-6 sm:w-6", statusDisplay.color)} />
+                  </div>
+                  <div>
+                    <CardDescription className="text-xs sm:text-sm">Indicador tecnico composto (0 a 100)</CardDescription>
+                    <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+                      {totalScore !== null ? totalScore.toFixed(1) : "--"}
+                    </CardTitle>
+                  </div>
                 </div>
-                <div>
-            <CardDescription className="text-xs sm:text-sm">Indicador tecnico composto (0 a 100)</CardDescription>
-                  <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-bold">
-                    {totalScore !== null ? totalScore.toFixed(1) : "--"}
-                  </CardTitle>
+                <div className={cn(
+                  "px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-semibold",
+                  statusDisplay.bgColor,
+                  statusDisplay.color
+                )}>
+                  {statusDisplay.label}
                 </div>
               </div>
-              <div className={cn(
-                "px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base font-semibold",
-                statusDisplay.bgColor,
-                statusDisplay.color
-              )}>
-                {statusDisplay.label}
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-slate-600 mb-1 sm:mb-2">
+                {totalScore === null
+                  ? "Score composto indisponível — exibindo apenas indicadores auditados do BCB."
+                  : "Indicador interno de monitoramento calculado com base principal no BCB/IFData e formulas documentadas quando aplicavel."
+                }
+              </p>
+              <p className="text-xs text-slate-500 mb-2 sm:mb-3">
+                Nao e classificacao oficial do BCB, nao substitui demonstracoes financeiras e nao constitui recomendacao de investimento, credito, juridica ou regulatoria.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-3 sm:mb-4 text-xs">
+                <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa relativa A: quartil superior da amostra atual</span>
+                <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa relativa B: acima da mediana da amostra</span>
+                <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa relativa C: entre mediana inferior e quartil inferior</span>
+                <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa relativa D: quartil inferior da amostra atual</span>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-slate-600 mb-1 sm:mb-2">
-              {totalScore === null
-                ? "Score composto indisponível — exibindo apenas indicadores auditados do BCB."
-                : "Indicador interno de monitoramento calculado com base principal no BCB/IFData e formulas documentadas quando aplicavel."
-              }
-            </p>
-            <p className="text-xs text-slate-500 mb-2 sm:mb-3">
-              Nao e classificacao oficial do BCB, nao substitui demonstracoes financeiras e nao constitui recomendacao de investimento, credito, juridica ou regulatoria.
-            </p>
-            {/* Faixa legend */}
-            <div className="flex flex-wrap gap-2 mb-3 sm:mb-4 text-xs">
-              <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Faixa relativa A: quartil superior da amostra atual</span>
-              <span className="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Faixa relativa B: acima da mediana da amostra</span>
-              <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium">Faixa relativa C: entre mediana inferior e quartil inferior</span>
-              <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Faixa relativa D: quartil inferior da amostra atual</span>
-            </div>
-            {/* Segment context badge */}
-            {segCtx && (
-              <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
-                <span className="font-medium text-slate-500">Entre os {SEGMENT_LABELS[segCtx.segment] ?? segCtx.segment}:</span>
-                {segCtx.rank !== null && (
-                  <span className={cn(
-                    "px-2.5 py-0.5 rounded-full font-semibold",
-                    segCtx.rank === 1 ? "bg-yellow-100 text-yellow-800" :
-                    segCtx.rank <= 3 ? "bg-amber-100 text-amber-800" :
-                    "bg-slate-100 text-slate-700"
-                  )}>
-                    {segCtx.rank}º de {segCtx.total}
-                  </span>
-                )}
-                {segCtx.aboveAverage !== null && (
-                  <span className={cn(
-                    "px-2.5 py-0.5 rounded-full font-medium",
-                    segCtx.aboveAverage
-                      ? "bg-green-100 text-green-700"
-                      : "bg-orange-100 text-orange-700"
-                  )}>
-                    {segCtx.aboveAverage ? "↑ Acima da média" : "↓ Abaixo da média"}
-                    {segCtx.avgScore !== null && ` do segmento (méd. ${segCtx.avgScore.toFixed(1)})`}
-                  </span>
-                )}
-              </div>
-            )}
-            {provenance && (
-              <div className="mb-3 rounded-lg border border-slate-200 bg-white/80 p-3">
-                <p className="text-xs font-semibold text-slate-700">Confianca da base atual</p>
-                <p className="text-xs text-slate-600 mt-1">
-                  {provenance.summary.confidencePct}% das metricas estao em origem BCB direta/derivada.
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">
-                    Direto BCB: {provenance.summary.directCount}
-                  </span>
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
-                    Derivado IFData: {provenance.summary.derivedCount}
-                  </span>
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
-                    Nao estrito: {provenance.summary.nonStrictCount}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
-                    Sem dados: {provenance.summary.missingCount}
-                  </span>
-                </div>
-                {provenance.summary.nonStrictCount > 0 && (
-                  <p className="mt-2 text-[11px] text-amber-700">
-                    Itens em "Nao estrito" podem vir de fontes complementares e nao da extracao IFData estrita.
-                  </p>
-                )}
-                <p className="mt-2 text-[11px] text-slate-500">
-                  Em caso de divergencia, prevalecem as publicacoes oficiais do BCB e as demonstracoes financeiras da instituicao.
-                </p>
-              </div>
-            )}
-            <div className="relative pt-2">
-              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500 bg-gradient-to-r",
-                    scores?.status === "healthy"                              ? "from-green-500 to-green-400"   :
-                    scores?.status === "watch" || scores?.status === "warning"? "from-yellow-500 to-yellow-400" :
-                    scores?.status === "risk"                                 ? "from-orange-500 to-orange-400" :
-                    scores?.status === "critical"                             ? "from-red-500 to-red-400"       :
-                    "from-slate-300 to-slate-200"
+              {segCtx && (
+                <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
+                  <span className="font-medium text-slate-500">Entre os {SEGMENT_LABELS[segCtx.segment] ?? segCtx.segment}:</span>
+                  {segCtx.rank !== null && (
+                    <span className={cn(
+                      "px-2.5 py-0.5 rounded-full font-semibold",
+                      segCtx.rank === 1 ? "bg-yellow-100 text-yellow-800" :
+                      segCtx.rank <= 3 ? "bg-amber-100 text-amber-800" :
+                      "bg-slate-100 text-slate-700"
+                    )}>
+                      {segCtx.rank}º de {segCtx.total}
+                    </span>
                   )}
-                  style={{ width: totalScore !== null ? `${Math.min(totalScore, 100)}%` : "0%" }}
+                  {segCtx.aboveAverage !== null && (
+                    <span className={cn(
+                      "px-2.5 py-0.5 rounded-full font-medium",
+                      segCtx.aboveAverage
+                        ? "bg-green-100 text-green-700"
+                        : "bg-orange-100 text-orange-700"
+                    )}>
+                      {segCtx.aboveAverage ? "↑ Acima da média" : "↓ Abaixo da média"}
+                      {segCtx.avgScore !== null && ` do segmento (méd. ${segCtx.avgScore.toFixed(1)})`}
+                    </span>
+                  )}
+                </div>
+              )}
+              {provenance && (
+                <div className="mb-3 rounded-lg border border-slate-200 bg-white/80 p-3">
+                  <p className="text-xs font-semibold text-slate-700">Confianca da base atual</p>
+                  <p className="text-xs text-slate-600 mt-1">
+                    {provenance.summary.confidencePct}% das metricas estao em origem BCB direta/derivada.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700">
+                      Direto BCB: {provenance.summary.directCount}
+                    </span>
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">
+                      Derivado IFData: {provenance.summary.derivedCount}
+                    </span>
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
+                      Nao estrito: {provenance.summary.nonStrictCount}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-700">
+                      Sem dados: {provenance.summary.missingCount}
+                    </span>
+                  </div>
+                  {provenance.summary.nonStrictCount > 0 && (
+                    <p className="mt-2 text-[11px] text-amber-700">
+                      Itens em "Nao estrito" podem vir de fontes complementares e nao da extracao IFData estrita.
+                    </p>
+                  )}
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    Em caso de divergencia, prevalecem as publicacoes oficiais do BCB e as demonstracoes financeiras da instituicao.
+                  </p>
+                </div>
+              )}
+              <div className="relative pt-2">
+                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500 bg-gradient-to-r",
+                      scores?.status === "healthy"                              ? "from-green-500 to-green-400"   :
+                      scores?.status === "watch" || scores?.status === "warning"? "from-yellow-500 to-yellow-400" :
+                      scores?.status === "risk"                                 ? "from-orange-500 to-orange-400" :
+                      scores?.status === "critical"                             ? "from-red-500 to-red-400"       :
+                      "from-slate-300 to-slate-200"
+                    )}
+                    style={{ width: totalScore !== null ? `${Math.min(totalScore, 100)}%` : "0%" }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-slate-500 mt-2">
+                  <span>0</span>
+                  <span>50</span>
+                  <span>100</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hidden xl:block border-slate-200 bg-white/95 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-slate-500">Publicidade</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {sidebarSlotId ? (
+                <AdSenseSlot
+                  slot={sidebarSlotId}
+                  format="auto"
+                  width={300}
+                  height={600}
+                  className="mx-auto w-[300px] h-[600px]"
                 />
-              </div>
-              <div className="flex justify-between text-xs text-slate-500 mt-2">
-                <span>0</span>
-                <span>50</span>
-                <span>100</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              ) : (
+                <div className="h-[600px] w-[300px] mx-auto rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                  Configure NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR para exibir o anuncio.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* ── Key Metrics Grid ── */}
       {isLoadingDetail ? (
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <MetricSkeleton key={i} />)}
         </div>
       ) : (
@@ -295,7 +318,7 @@ export function BankMetrics({ bank, detail, isLoadingDetail = false }: BankMetri
 
       {/* ── Score Breakdown ── */}
       {isLoadingDetail ? (
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => <MetricSkeleton key={i} />)}
         </div>
       ) : (

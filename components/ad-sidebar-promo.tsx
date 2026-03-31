@@ -16,11 +16,15 @@ export function AdSidebarPromo() {
           <p className="text-xs text-slate-400 mb-3 font-semibold uppercase tracking-wider">
             Anúncio
           </p>
-          <AdSenseSlot
-            slot={slotId}
-            format="vertical"
-            className="flex justify-center"
-          />
+          <div className="flex justify-center">
+            <AdSenseSlot
+              slot={slotId}
+              format="auto"
+              width={300}
+              height={600}
+              className="w-[300px] h-[600px]"
+            />
+          </div>
         </div>
       </div>
     </div>

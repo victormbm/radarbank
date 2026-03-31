@@ -7,14 +7,11 @@ import { BanksOverview } from "@/components/banks-overview";
 import { DashboardBank } from "@/lib/brazilian-banks";
 import type { BankDetail } from "@/lib/types";
 import { bankDetailResponseSchema } from "@/lib/validation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdSenseSlot } from "@/components/adsense-slot";
-import { AdSidebarPromo } from "@/components/ad-sidebar-promo";
-import { AdFooterPromo } from "@/components/ad-footer-promo";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
 const DASHBOARD_REFRESH_MS = 5 * 60 * 1000;
-const ADSENSE_SLOT_DASHBOARD_TOP = process.env.NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP || "";
 
 type IngestStatus = {
   status: "no_data" | "fresh" | "current" | "stale" | "outdated";
@@ -33,6 +30,7 @@ type IngestStatus = {
 };
 
 export function DashboardPageClient() {
+  const topSlotId = process.env.NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP || "";
   const [banks, setBanks] = useState<DashboardBank[]>([]);
   const [selectedBank, setSelectedBank] = useState<DashboardBank | null>(null);
   const [selectedBankDetail, setSelectedBankDetail] = useState<BankDetail | null>(null);
@@ -167,7 +165,7 @@ export function DashboardPageClient() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] opacity-10" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto space-y-8 sm:space-y-10 lg:space-y-12">
+      <div className="relative z-10 max-w-[1500px] mx-auto space-y-8 sm:space-y-10 lg:space-y-12">
       <div className="relative py-4">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-orange-600/10 rounded-2xl blur-3xl" />
         <div className="relative">
@@ -299,11 +297,15 @@ export function DashboardPageClient() {
           <CardTitle className="text-xs font-medium text-slate-500">Publicidade</CardTitle>
         </CardHeader>
         <CardContent>
-          {ADSENSE_SLOT_DASHBOARD_TOP ? (
-            <AdSenseSlot slot={ADSENSE_SLOT_DASHBOARD_TOP} className="min-h-[90px]" />
+          {topSlotId ? (
+            <AdSenseSlot
+              slot={topSlotId}
+              format="auto"
+              className="w-full min-h-[90px]"
+            />
           ) : (
             <div className="flex min-h-[90px] items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 text-xs text-slate-500">
-              Configure NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP para ativar anuncios.
+              Configure NEXT_PUBLIC_ADSENSE_SLOT_DASHBOARD_TOP para ativar anuncios no topo.
             </div>
           )}
         </CardContent>
@@ -328,15 +330,7 @@ export function DashboardPageClient() {
 
       {selectedBank ? (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2">
-              <BankMetrics bank={selectedBank} detail={selectedBankDetail} isLoadingDetail={isLoadingDetail} />
-            </div>
-            <div className="lg:col-span-1">
-              <AdSidebarPromo />
-            </div>
-          </div>
-          <AdFooterPromo />
+          <BankMetrics bank={selectedBank} detail={selectedBankDetail} isLoadingDetail={isLoadingDetail} />
         </div>
       ) : (
         <Card className="border-dashed border-2 border-white/40 bg-white/95 shadow-md backdrop-blur-sm">
